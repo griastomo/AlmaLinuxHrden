@@ -1,0 +1,403 @@
+---
+############################################
+### Section 3.7 User Accounts Management ###
+############################################
+
+- name: "3.7.1 | Shadow Password Parameters"
+  block:
+    - name: "3.7.1 | Shadow Password Parameters | Edit /etc/login.defs file"
+      lineinfile:
+        state: present
+        dest: /etc/login.defs
+        regexp: ^{{ item.name }}
+        line: "{{ item.name }} {{ item.value }}"
+      notify: handler_restart_auditd
+      with_items:
+        - { name: PASS_MAX_DAYS, value: 90 }
+        - { name: PASS_MIN_DAYS, value: 7 }
+        - { name: PASS_MIN_LEN, value: 8 }
+        - { name: PASS_WARN_AGE, value: 7 }
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: "3.7.1 | Shadow Password Parameters | Backup /etc/shadow file"
+      shell: "{{ harden_home_path }}/scripts/3.7.1.sh"
+      args:
+        executable: /bin/bash
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.7.1 | Shadow Password Parameters | Set /etc/shadow ownership and permission"
+      file:
+        dest: "{{ item }}"
+        owner: root
+        group: root
+        mode: o-rwx,g-wx
+      with_items:
+        - /etc/shadow
+        - /etc/shadow-
+        - /etc/gshadow
+        - /etc/gshadow-
+
+    - name: "3.7.1 | Shadow Password Parameters | Set /etc/shadow ownership and permission"
+      file:
+        dest: "{{ item }}"
+        owner: root
+        group: shadow
+        mode: o-rwx,g-wx
+      with_items:
+        - /etc/shadow
+        - /etc/shadow-
+        - /etc/gshadow
+        - /etc/gshadow-
+      when:
+        - "'shadow' in ansible_facts.getent_group"
+
+    - name: "3.7.1 | Shadow Password Parameters | For Existing Active Accounts"
+      debug:
+        msg: "This is a manual task. Please make sure all align with site policy!"
+      register: manual_3_7_1
+  when:
+    - run_rule_3_7_1
+
+- name: "3.7.2 | Default umask for Users"
+  block:
+    - name: "3.7.2 | Default umask for Users | Edit /etc/profile file"
+      replace:
+        path: /etc/profile
+        regexp: '(^\s+umask) 0[012][0-6]'
+        replace: '\1 027'
+
+    - name: "3.7.2 | Default umask for Users | Edit /etc/bashrc file"
+      replace:
+        path: /etc/bashrc
+        regexp: '(^\s+umask) 0[012][0-6]'
+        replace: '\1 027'
+  when:
+    - run_rule_3_7_2
+
+- name: "3.7.3 | Lock Inactive User Accounts or Roles"
+  block:
+    - name: "3.7.3 | Lock Inactive User Accounts or Roles | Edit /etc/pam.d/login file"
+      lineinfile:
+        path: /etc/pam.d/login
+        state: present
+        regexp: '^auth\s*required\s*pam_lastlog.so'
+        line: "auth        required      pam_lastlog.so inactive=90"
+        insertafter: '^#?auth ?'
+
+    - name: "3.7.3 | Lock Inactive User Accounts or Roles | Edit /etc/pam.d/gdm-password file"
+      lineinfile:
+        path: /etc/pam.d/gdm-password
+        state: present
+        regexp: '^auth\s*required\s*pam_lastlog.so'
+        line: "auth        required      pam_lastlog.so inactive=90"
+        insertafter: '^#?auth ?'
+      ignore_errors: true
+
+    - name: "3.7.3 | Lock Inactive User Accounts or Roles | For Existing Active Accounts"
+      debug:
+        msg: "This is a manual task. Please make sure all align with site policy!"
+      register: manual_3_7_3
+
+    - name: "3.7.3 | Lock Inactive User Accounts or Roles | For New Created Accounts"
+      shell: useradd -D -f 90
+      ignore_errors: true
+  when:
+    - run_rule_3_7_3
+
+- name: "3.7.4 | Default System Accounts"
+  block:
+    - name: "3.7.4 | Default System Accounts | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.7.4.sh"
+      args:
+        executable: /bin/bash
+      register: results_3_7_4
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.7.4 | Default System Accounts | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_7_4.stdout_lines }}"
+      register: manual_3_7_4
+      when:
+        - results_3_7_4 is defined and results_3_7_4.stdout != ""
+  when:
+    - run_rule_3_7_4
+
+- name: "3.7.5 | Empty Password Fields"
+  block:
+    - name: "3.7.5 | Empty Password Fields | Audit"
+      shell: 'cat /etc/shadow | awk -F: ''($2 == "" ) {j++;print $1; } END {exit j}'''
+      args:
+        warn: no
+      changed_when: no
+      check_mode: no
+      register: results_3_7_5
+
+    - name: "3.7.5 | Empty Password Fields | Result no output"
+      debug:
+        msg: "PASS! No configuration needed"
+      when:
+        - results_3_7_5 is defined and results_3_7_5.stdout == ""
+
+    - name: "3.7.5 | Empty Password Fields | Result any output"
+      debug:
+        msg:
+          - "{{ results_3_7_5.stdout_lines }}"
+      when:
+        - results_3_7_5 is defined and results_3_7_5.stdout != ""
+
+    - name: "3.7.5 | Empty Password Fields | Configure password fields are not empty"
+      shell: passwd -l {{ item }}
+      ignore_errors: true
+      with_items: "{{ results_3_7_5.stdout }}"
+      when:
+        - results_3_7_5.rc
+  when:
+    - run_rule_3_7_5
+
+- name: "3.7.6 | Safeguarding root"
+  block:
+    - name: "3.7.6 | Safeguarding root | Audit"
+      shell: "cat /etc/passwd | awk -F: '($3 == 0) { print }'"
+      register: results_3_7_6a
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.7.6 | Safeguarding root | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_7_6a.stdout_lines }}"
+      register: manual_3_7_6a
+      when:
+        - results_3_7_6a is defined and results_3_7_6a.stdout != ""
+
+    - name: "3.7.6 | Safeguarding root | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.7.6.sh"
+      args:
+        executable: /bin/bash
+      register: results_3_7_6b
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.7.6 | Safeguarding root | Result no output"
+      debug:
+        msg: "PASS! No configuration needed"
+      when:
+        - results_3_7_6b is defined and results_3_7_6b.stdout == ""
+
+    - name: "3.7.6 | Safeguarding root | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_7_6b.stdout_lines }}"
+      register: manual_3_7_6b
+      when:
+        - results_3_7_6b is defined and results_3_7_6b.stdout != ""
+
+    - name: "3.7.6 | Safeguarding root | Ensure default group for the root account is GID 0"
+      shell: usermod -g 0 root
+      no_log: true
+      ignore_errors: true
+  when:
+    - run_rule_3_7_6
+
+- name: "3.7.7 | Groups in /etc/passwd"
+  block:
+    - name: "3.7.7 | Groups in /etc/passwd | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.7.7.sh"
+      args:
+        executable: /bin/bash
+      register: results_3_7_7
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.7.7 | Groups in /etc/passwd | Result no output"
+      debug:
+        msg: "PASS! No configuration needed"
+      when:
+        - results_3_7_7 is defined and results_3_7_7.stdout == ""
+
+    - name: "3.7.7 | Groups in /etc/passwd | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_7_7.stdout_lines }}"
+      register: manual_3_7_7
+      when:
+        - results_3_7_7 is defined and results_3_7_7.stdout != ""
+  when:
+    - run_rule_3_7_7
+
+- name: "3.7.8 | User Home Directories Assignment"
+  block:
+    - name: "3.7.8 | User Home Directories Assignment | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.7.8.sh -a"
+      args:
+        executable: /bin/bash
+      register: results_3_7_8a
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.7.8 | User Home Directories Assignment | Result no output"
+      debug:
+        msg: "PASS! No configuration needed"
+      when:
+        - results_3_7_8a is defined and results_3_7_8a.stdout == ""
+
+    - name: "3.7.8 | User Home Directories Assignment | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_7_8a.stdout_lines }}"
+      register: manual_3_7_8a
+      when:
+        - results_3_7_8a is defined and results_3_7_8a.stdout != ""
+
+    - name: "3.7.8 | User Home Directories Assignment | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.7.8.sh -b"
+      args:
+        executable: /bin/bash
+      register: results_3_7_8b
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.7.8 | User Home Directories Assignment | Result no output"
+      debug:
+        msg: "PASS! No configuration needed"
+      when:
+        - results_3_7_8b is defined and results_3_7_8b.stdout == ""
+
+    - name: "3.7.8 | User Home Directories Assignment | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_7_8b.stdout_lines }}"
+      register: manual_3_7_8b
+      when:
+        - results_3_7_8b is defined and results_3_7_8b.stdout != ""
+  when:
+    - run_rule_3_7_8
+
+- name: "3.7.9 | Duplicate UIDs or GIDs"
+  block:
+    - name: "3.7.9 | Duplicate UIDs or GIDs | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.7.9.sh -u"
+      args:
+        executable: /bin/bash
+      register: results_3_7_9a
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.7.9 | Duplicate UIDs or GIDs | UIDs | Result no output"
+      debug:
+        msg: "PASS! No duplicate on UIDs exists"
+      when:
+        - results_3_7_9a is defined and results_3_7_9a.stdout == ""
+
+    - name: "3.7.9 | Duplicate UIDs or GIDs | UIDs | Audit"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_7_9a.stdout_lines }}"
+      register: manual_3_7_9a
+      when:
+        - results_3_7_9a is defined and results_3_7_9a.stdout != ""
+
+    - name: "3.7.9 | Duplicate UIDs or GIDs | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.7.9.sh -g"
+      args:
+        executable: /bin/bash
+      register: results_3_7_9b
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.7.9 | Duplicate UIDs or GIDs | GIDs | Result no output"
+      debug:
+        msg: "PASS! No duplicate on GIDs exists"
+      when:
+        - results_3_7_9b is defined and results_3_7_9b.stdout == ""
+
+    - name: "3.7.9 | Duplicate UIDs or GIDs | GIDs | Audit"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_7_9b.stdout_lines }}"
+      register: manual_3_7_9b
+      when:
+        - results_3_7_9b is defined and results_3_7_9b.stdout != ""
+  when:
+    - run_rule_3_7_9
+
+- name: "3.7.10 | Reserved UIDs for System Accounts"
+  block:
+    - name: "3.7.10 | Reserved UIDs for System Accounts | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.7.10.sh"
+      args:
+        executable: /bin/bash
+      register: results_3_7_10
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.7.10 | Reserved UIDs for System Accounts | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_7_10.stdout_lines }}"
+      register: manual_3_7_10
+  when:
+    - run_rule_3_7_10
+
+- name: "3.7.11 | Duplicates User Names or Group Names"
+  block:
+    - name: "3.7.11 | Duplicates User Names or Group Names | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.7.11.sh -u"
+      args:
+        executable: /bin/bash
+      register: results_3_7_11a
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.7.11 | Duplicates User Names or Group Names | User Names | Result no output"
+      debug:
+        msg: "PASS! No duplicate on User Names exists"
+      when:
+        - results_3_7_11a is defined and results_3_7_11a.stdout == ""
+
+    - name: "3.7.11 | Duplicates User Names or Group Names | User Names | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_7_11a.stdout_lines }}"
+      register: manual_3_7_11a
+      when:
+        - results_3_7_11a is defined and results_3_7_11a.stdout != ""
+
+    - name: "3.7.11 | Duplicates User Names or Group Names | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.7.11.sh -g"
+      args:
+        executable: /bin/bash
+      register: results_3_7_11b
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.7.11 | Duplicates User Names or Group Names | Group Names | Result no output"
+      debug:
+        msg: "PASS! No duplicate on Group Names exists"
+      when:
+        - results_3_7_11b is defined and results_3_7_11b.stdout == ""
+
+    - name: "3.7.11 | Duplicates User Names or Group Names | Group Names | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_7_11b.stdout_lines }}"
+      register: manual_3_7_11b
+      when:
+        - results_3_7_11b is defined and results_3_7_11b.stdout != ""
+  when:
+    - run_rule_3_7_11

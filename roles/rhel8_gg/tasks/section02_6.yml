@@ -1,0 +1,11 @@
+---
+###############################
+### Section 2.6 Full Backup ###
+###############################
+
+- name: "2.6 | Full Backup"
+  debug:
+    msg: "This is a manual task. Please make sure all align with site policy!"
+  register: manual_2_6
+  when:
+    - run_rule_2_6

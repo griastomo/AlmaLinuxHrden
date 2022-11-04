@@ -1,0 +1,428 @@
+---
+############################
+### Section 3.2 Services ###
+############################
+
+- name: "3.2.1 | Legacy Service"
+  block:
+    - name: "3.2.1 | Legacy Service | Remove telnet-server"
+      package:
+        name: telnet-server
+        state: absent
+      when:
+        - "'telnet-server' in ansible_facts.packages"
+        - service_telnet_server
+
+    - name: "3.2.1 | Legacy Service | Remove telnet"
+      package:
+        name: telnet
+        state: absent
+      when:
+        - "'telnet' in ansible_facts.packages"
+        - service_telnet
+
+    - name: "3.2.1 | Legacy Service | Remove rsh-server"
+      package:
+        name: rsh-server
+        state: absent
+      when:
+        - "'rsh-server' in ansible_facts.packages"
+        - service_rsh_server
+
+    - name: "3.2.1 | Legacy Service | Remove rsh"
+      package:
+        name: rsh
+        state: absent
+      when:
+        - "'rsh' in ansible_facts.packages"
+        - service_rsh
+
+    - name: "3.2.1 | Legacy Service | Remove ypbind"
+      package:
+        name: ypbind
+        state: absent
+      when:
+        - "'ypbind' in ansible_facts.packages"
+        - service_ypbind
+
+    - name: "3.2.1 | Legacy Service | Remove ypserv"
+      package:
+        name: ypserv
+        state: absent
+      when:
+        - "'ypserv' in ansible_facts.packages"
+        - service_ypserv
+
+    - name: "3.2.1 | Legacy Service | Remove tftp"
+      package:
+        name: tftp
+        state: absent
+      when:
+        - "'tftp' in ansible_facts.packages"
+        - service_tftp
+
+    - name: "3.2.1 | Legacy Service | Remove tftp-server"
+      package:
+        name: tftp-server
+        state: absent
+      when:
+        - "'tftp-server' in ansible_facts.packages"
+        - service_tftp_server
+
+    - name: "3.2.1 | Legacy Service | Remove talk"
+      package:
+        name: talk
+        state: absent
+      when:
+        - "'talk' in ansible_facts.packages"
+        - service_talk
+
+    - name: "3.2.1 | Legacy Service | Remove talk-server"
+      package:
+        name: talk-server
+        state: absent
+      when:
+        - "'talk-server' in ansible_facts.packages"
+        - service_talk_server
+
+    - name: "3.2.1 | Legacy Service | Remove xinet-d"
+      package:
+        name: xinetd
+        state: absent
+      when:
+        - "'xinetd' in ansible_facts.packages"
+        - service_xinetd
+
+    - name: "3.2.1 | Legacy Service | Remove mcs translation"
+      package:
+        name: mcstrans
+        state: absent
+      when:
+        - "'mcstrans' in ansible_facts.packages"
+        - service_mcstrans
+
+    - name: "3.2.1 | Legacy Service | Disable chargen-dgram"
+      service:
+        name: chargen-dgram
+        state: stopped
+        enabled: no
+      when:
+        - "'chargen-dgram' in ansible_facts.packages"
+        - service_chargen_dgram
+
+    - name: "3.2.1 | Legacy Service | Disable chargen-stream"
+      service:
+        name: chargen-stream
+        state: stopped
+        enabled: no
+      when:
+        - "'chargen-stream' in ansible_facts.packages"
+        - service_chargen_stream
+
+    - name: "3.2.1 | Legacy Service | Disable daytime-dgram"
+      service:
+        name: daytime-dgram
+        state: stopped
+        enabled: no
+      when:
+        - "'daytime-dgram' in ansible_facts.packages"
+        - service_daytime_dgram
+
+    - name: "3.2.1 | Legacy Service | Disable daytime-stream"
+      service:
+        name: daytime-stream
+        state: stopped
+        enabled: no
+      when:
+        - "'daytime-stream' in ansible_facts.packages"
+        - service_daytime_stream
+
+    - name: "3.2.1 | Legacy Service | Disable discard-dgram"
+      service:
+        name: discard-dgram
+        state: stopped
+        enabled: no
+      when:
+        - "'discard-dgram' in ansible_facts.packages"
+        - service_discard_dgram
+
+    - name: "3.2.1 | Legacy Service | Disable discard-stream"
+      service:
+        name: discard-stream
+        state: stopped
+        enabled: no
+      when:
+        - "'discard-stream' in ansible_facts.packages"
+        - service_discard_stream
+
+    - name: "3.2.1 | Legacy Service | Disable echo-dgram"
+      service:
+        name: echo-dgram
+        state: stopped
+        enabled: no
+      when:
+        - "'echo-dgram' in ansible_facts.packages"
+        - service_echo_dgram
+
+    - name: "3.2.1 | Legacy Service | Disable echo-stream"
+      service:
+        name: echo-stream
+        state: stopped
+        enabled: no
+      when:
+        - "'echo-stream' in ansible_facts.packages"
+        - service_echo_stream
+
+    - name: "3.2.1 | Legacy Service | Disable time-dgram"
+      service:
+        name: time-dgram
+        state: stopped
+        enabled: no
+      when:
+        - "'time-dgram' in ansible_facts.packages"
+        - service_time_dgram
+
+    - name: "3.2.1 | Legacy Service | Disable time-stream"
+      service:
+        name: time-stream
+        state: stopped
+        enabled: no
+      when:
+        - "'time-stream' in ansible_facts.packages"
+        - service_time_stream
+
+    - name: "3.2.1 | Legacy Service | Disable tcpmux-server"
+      service:
+        name: tcpmux-server
+        state: stopped
+        enabled: no
+      when:
+        - "'tcpmux-server' in ansible_facts.packages"
+        - service_tcpmux_server
+  when:
+    - run_rule_3_2_1
+
+- name: "3.2.2 | Special Purpose Services"
+  block:
+    - name: "3.2.2 | Special Purpose Services | Uninstall X Window System"
+      package:
+        name: "xorg-x11-*"
+        state: absent
+      when:
+        - "'xorg-x11-*' in ansible_facts.packages"
+        - service_windows_system
+
+    - name: "3.2.2 | Special Purpose Services | Uninstall GNOME Display Manager"
+      package:
+        name: gdm
+        state: absent
+      when:
+        - "'gdm' in ansible_facts.packages"
+        - service_gdm
+
+    - name: "3.2.2 | Special Purpose Service | Disable avahi-daemon"
+      service:
+        name: avahi-daemon
+        state: stopped
+        enabled: no
+      when:
+        - "'avahi-daemon' in ansible_facts.packages"
+        - service_avahi_daemon
+
+    - name: "3.2.2 | Special Purpose Service | Disable cups"
+      service:
+        name: cups
+        state: stopped
+        enabled: no
+      when:
+        - "'cups' in ansible_facts.packages"
+        - service_cups
+
+    - name: "3.2.2 | Special Purpose Service | Disable dhcpd"
+      service:
+        name: dhcpd
+        state: stopped
+        enabled: no
+      when:
+        - "'dhcpd' in ansible_facts.packages"
+        - service_dhcpd
+
+    - name: "3.2.2 | Special Purpose Service | Remove openldap-servers"
+      package:
+        name: openldap-servers
+        state: absent
+      when:
+        - "'openldap-servers' in ansible_facts.packages"
+        - service_openldap_servers
+
+    - name: "3.2.2 | Special Purpose Service | Disable slapd"
+      service:
+        name: slapd
+        state: stopped
+        enabled: no
+      when:
+        - "'slapd' in ansible_facts.packages"
+        - service_slapd
+
+    - name: "3.2.2 | Special Purpose Service | Remove NFS and RPC packages"
+      package:
+        name: "{{ item }}"
+        state: absent
+      with_items:
+        - "nfslock"
+        - "nfs-server"
+        - "rpcgssd"
+        - "rpcbind"
+        - "rpcidmapd"
+        - "rpcsvcgssd"
+      when:
+        - "'item' in ansible_facts.packages"
+        - service_nfs_rpc
+
+    - name: "3.2.2 | Special Purpose Service | Remove bind"
+      package:
+        name: bind
+        state: absent
+      when:
+        - "'bind' in ansible_facts.packages"
+        - service_bind
+
+    - name: "3.2.2 | Special Purpose Service | Remove vsftpd"
+      package:
+        name: vsftpd
+        state: absent
+      when:
+        - "'vsftpd' in ansible_facts.packages"
+        - service_vsftpd
+
+    - name: "3.2.2 | Special Purpose Service | Remove httpd"
+      package:
+        name: httpd
+        state: absent
+      when:
+        - "'httpd' in ansible_facts.packages"
+        - service_httpd
+
+    - name: "3.2.2 | Special Purpose Service | Remove dovecot"
+      package:
+        name: dovecot
+        state: absent
+      when:
+        - "'dovecot' in ansible_facts.packages"
+        - service_dovecot
+
+    - name: "3.2.2 | Special Purpose Service | Remove squid"
+      package:
+        name: squid
+        state: absent
+      when:
+        - "'squid' in ansible_facts.packages"
+        - service_squid
+
+    - name: "3.2.2 | Special Purpose Service | Remove net-snmp"
+      package:
+        name: net-snmp
+        state: absent
+      when:
+        - "'net-snmp' in ansible_facts.packages"
+        - service_net_snmp
+
+    - name: "3.2.2 | Special Purpose Service | Disable autofs"
+      service:
+        name: autofs
+        enabled: no
+      when:
+        - "'autofs' in ansible_facts.packages"
+        - service_autofs
+
+    - name: "3.2.2 | Special Purpose Service | Disable rsync"
+      service:
+        name: rsyncd
+        enabled: no
+      when:
+        - "'rsyncd' in ansible_facts.packages"
+        - service_rsync
+
+    - name: "3.2.2 | Special Purpose Service | Disable samba"
+      service:
+        name: smb
+        enabled: no
+      when:
+        - "'smb' in ansible_facts.packages"
+        - service_smb
+  when:
+    - run_rule_3_2_2
+
+- name: "3.2.3 | Uncommon Network Protocol and Unused File System"
+  block:
+    - name: "3.2.3 | Uncommon Network Protocol and Unused File System | Unloaded dccp"
+      modprobe:
+        name: dccp
+        state: absent
+      when:
+        - filesystem_dccp
+
+    - name: "3.2.3 | Uncommon Network Protocol and Unused File System | Unloaded sctp"
+      modprobe:
+        name: sctp
+        state: absent
+      when:
+        - filesystem_sctp
+
+    - name: "3.2.3 | Uncommon Network Protocol and Unused File System | Unloaded rds"
+      modprobe:
+        name: rds
+        state: absent
+      when:
+        - filesystem_rds
+
+    - name: "3.2.3 | Uncommon Network Protocol and Unused File System | Unloaded tipc"
+      modprobe:
+        name: tipc
+        state: absent
+      when:
+        - filesystem_tipc
+
+    - name: "3.2.3 | Uncommon Network Protocol and Unused File System | Unloaded cramfs"
+      modprobe:
+        name: cramfs
+        state: absent
+      when:
+        - filesystem_cramfs
+
+    - name: "3.2.3 | Uncommon Network Protocol and Unused File System | Unloaded squashfs"
+      modprobe:
+        name: squashfs
+        state: absent
+      when:
+        - filesystem_squashfs
+
+    - name: "3.2.3 | Uncommon Network Protocol and Unused File System | Unloaded udf"
+      modprobe:
+        name: udf
+        state: absent
+      when:
+        - filesystem_udf
+  when:
+    - run_rule_3_2_3
+
+- name: "3.2.4 | Crypto Policy Settings"
+  block:
+    - name: "3.2.4 | Crypto Policy Settings | Gather system-wide crypto-policy"
+      shell: update-crypto-policies --show
+      args:
+          warn: no
+      changed_when: no
+      check_mode: no
+      ignore_errors: true
+      register: results_3_2_4
+
+    - name: "3.2.4 | Crypto Policy Settings | Change system-wide crypto policy"
+      shell: |
+          update-crypto-policies --set DEFAULT
+          update-crypto-policies
+      ignore_errors: true
+      when:
+          - vars_crypto_policy|string not in results_3_2_4['stdout']
+  when:
+    - run_rule_3_2_4

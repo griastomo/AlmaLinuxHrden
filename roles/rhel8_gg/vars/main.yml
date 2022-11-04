@@ -1,0 +1,174 @@
+---
+# Variables for Harden Home Path
+harden_home_path: "{{ ansible_env.PWD }}/hardening"
+
+###########################
+### Section 2 Variables ###
+###########################
+
+## Section 2.1
+run_rule_2_1: false
+
+## Section 2.2
+run_rule_2_2: false
+
+## Section 2.3
+run_rule_2_3: false
+
+## Section 2.4
+run_rule_2_4: false
+
+## Section 2.5
+run_rule_2_5: false
+
+# Set to False to configure Date and Time manually.
+auto_conf_date_time: false
+
+# Date and Time Setting - used in template file chrony.conf.j2
+time_synchronization_servers:
+  - 0.pool.ntp.org
+  - 1.pool.ntp.org
+
+## Section 2.6
+run_rule_2_6: false
+
+###########################
+### Section 3 Variables ###
+###########################
+
+## Section 3.1
+run_rule_3_1: true
+
+## Section 3.2
+run_rule_3_2_1: true
+run_rule_3_2_2: true
+run_rule_3_2_3: true
+run_rule_3_2_4: true
+
+vars_crypto_policy: "DEFAULT"
+
+# Set to True to disable service, set False to keep the service.
+service_telnet_server: true
+service_telnet: true
+service_rsh_server: true
+service_rsh: true
+service_ypbind: true
+service_ypserv: true
+service_tftp: true
+service_tftp_server: true
+service_talk: true
+service_talk_server: true
+service_xinetd: true
+service_chargen_dgram: true
+service_chargen_stream: true
+service_daytime_dgram: true
+service_daytime_stream: true
+service_discard_dgram: true
+service_discard_stream: true
+service_echo_dgram: true
+service_echo_stream: true
+service_time_dgram: true
+service_time_stream: true
+service_tcpmux_server: true
+service_windows_system: true
+service_gdm: true
+service_avahi_daemon: true
+service_cups: true
+service_dhcpd: true
+service_openldap_servers: true
+service_slapd: true
+service_nfs_rpc: true
+service_bind: true
+service_vsftpd: true
+service_httpd: true
+service_dovecot: true
+service_squid: true
+service_net_snmp: true
+service_autofs: true
+service_rsync: true
+service_smb: true
+
+# Set to True to unload file system.
+filesystem_dccp: true
+filesystem_sctp: true
+filesystem_rds: true
+filesystem_tipc: true
+filesystem_cramfs: true
+filesystem_squashfs: true
+filesystem_udf: true
+
+## Section 3.3
+run_rule_3_3_1: true
+run_rule_3_3_2: true
+run_rule_3_3_3: true
+
+## Section 3.4
+run_rule_3_4_1: true
+run_rule_3_4_2: true
+run_rule_3_4_3: true
+
+vars_syslog_port: 514
+
+## Section 3.5
+run_rule_3_5_1: true
+run_rule_3_5_2: true
+run_rule_3_5_3: true
+run_rule_3_5_4: true
+run_rule_3_5_5: true
+run_rule_3_5_6: true
+run_rule_3_5_7: true
+run_rule_3_5_8: true
+
+## Section 3.6
+run_rule_3_6_1: true
+run_rule_3_6_2: true
+run_rule_3_6_3: true
+run_rule_3_6_4: true
+run_rule_3_6_5: true
+run_rule_3_6_6: true
+run_rule_3_6_7: true
+run_rule_3_6_8: true
+run_rule_3_6_9: true
+
+## Section 3.7
+run_rule_3_7_1: true
+run_rule_3_7_2: true
+run_rule_3_7_3: true
+run_rule_3_7_4: true
+run_rule_3_7_5: true
+run_rule_3_7_6: true
+run_rule_3_7_7: true
+run_rule_3_7_8: true
+run_rule_3_7_9: true
+run_rule_3_7_10: true
+run_rule_3_7_11: true
+
+## Section 3.8
+run_rule_3_8_1: true
+run_rule_3_8_2: true
+run_rule_3_8_3: true
+run_rule_3_8_4: true
+
+vars_warning_banner: |
+  ==============================================================================
+                                      WARNING
+  ==============================================================================
+  This system is owned by PT Gudang Garam Tbk. Use of this system is limited
+  to authorized individuals only and any unauthorized access to this system is
+  prohibited. If you are not authorized user, exit immediately. Any unauthorized
+  or improper use of this system may result in administrative or disciplinary
+  actions and civil or criminal penalties.
+
+  Access to this system is monitored 24 hours a day and all activity is logged.
+  By entering into this system you acknowledge that you are authorized to access
+  the level of privilege you subsequently execute on this system. You further
+  acknowledge that by entry into this system you expect no privacy from
+  monitoring.
+
+  By continuing to use this system you indicate your awareness of and consent to
+  these terms and conditions of use.
+  ==============================================================================
+
+## Section 3.9
+run_rule_3_9_1: true
+run_rule_3_9_2: true

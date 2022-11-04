@@ -1,0 +1,100 @@
+#!/bin/bash
+
+hardenhomepath='{{ harden_home_path }}'
+
+mkdir $hardenhomepath/sxibackupafter
+cd $hardenhomepath/sxibackupafter
+cp /etc/passwd $hardenhomepath/sxibackupafter/
+cat /etc/passwd | awk -F: '($3 == 0) { print $1 }' >> $hardenhomepath/sxibackupafter/passwd-awk.txt
+uname -r >> $hardenhomepath/sxibackupafter/uname.txt
+yum info kernel -q >> $hardenhomepath/sxibackupafter/kernel.txt
+chage -l root >> $hardenhomepath/sxibackupafter/chage-root.txt
+/usr/bin/find / -name .rhosts -exec ls -ldb {} \; -exec cat {} \; >> $hardenhomepath/sxibackupafter/rhosts.txt
+/usr/bin/find / -name .netrc -exec ls -ldb {} \; -exec cat {} \; >> $hardenhomepath/sxibackupafter/netrc.txt
+/usr/bin/find / -name .shosts -exec ls -ldb {} \; -exec cat {} \; >> $hardenhomepath/sxibackupafter/shosts.txt
+sleep 3
+find / -perm -o+w -exec ls -ldb {} \; >> $hardenhomepath/sxibackupafter/perm.txt
+find / -perm -o+w \( -type d \) -exec ls -ldb {} \; >> $hardenhomepath/sxibackupafter/perm-typed.txt
+find / \( -nouser -o -nogroup \) -exec ls -ld {} \; >> $hardenhomepath/sxibackupafter/nouser-nogroup.txt
+find / \( -perm -4000 -o -perm -2000 \) -type f -exec ls -ld {} \; >> $hardenhomepath/sxibackupafter/perm-4000.txt
+find / \( -perm -4000 -user root \) -type f -exec ls -ld {} \; >> $hardenhomepath/sxibackupafter/perm-user-4000.txt
+find / \( -perm -4000 -user bin \) -type f -exec ls -ld {} \; >> $hardenhomepath/sxibackupafter/perm-user-bin.txt
+find / \( -perm -4000 -o -perm -2000 \) -type f -exec ls -ld {} \; >> $hardenhomepath/sxibackupafter/perm-perm.txt
+chkconfig --list | grep -i sshd >> $hardenhomepath/sxibackupafter/sshd.txt
+ps -ef >> $hardenhomepath/sxibackupafter/ps-ef.txt
+lsof -i >> $hardenhomepath/sxibackupafter/lsof-i.txt
+ps -aux | grep sshd >> $hardenhomepath/sxibackupafter/sshd-verif.txt
+service sshd status >> $hardenhomepath/sxibackupafter/sshd-status.txt
+rpm -qa | grep -i ssh >> $hardenhomepath/sxibackupafter/sshd-check-package.txt
+ps -ef | grep syslogd >> $hardenhomepath/sxibackupafter/syslogd.txt
+ps -ef | grep ntpd >> $hardenhomepath/sxibackupafter/ntpd-checking.txt
+rpm -qa | grep -i ntp >> $hardenhomepath/sxibackupafter/ntp-verify.txt
+service ntpd status >> $hardenhomepath/sxibackupafter/ntpd-status.txt
+sleep 3
+yum check-update >> $hardenhomepath/sxibackupafter/check-update.txt
+cp /etc/selinux/config $hardenhomepath/sxibackupafter/
+cp /etc/group $hardenhomepath/sxibackupafter/
+cp /etc/fstab $hardenhomepath/sxibackupafter/
+cp /boot/grub2/grub.cfg $hardenhomepath/sxibackupafter/
+cp /boot/grub2/user.cfg $hardenhomepath/sxibackupafter/
+cp /etc/yum.conf $hardenhomepath/sxibackupafter/
+cp /etc/hosts.allow $hardenhomepath/sxibackupafter/
+cp /etc/hosts.deny $hardenhomepath/sxibackupafter/
+cp /etc/security/limits.conf $hardenhomepath/sxibackupafter/
+cp /etc/sysctl.conf $hardenhomepath/sxibackupafter/
+cp /etc/modprobe.d/blacklist-wireless $hardenhomepath/sxibackupafter/
+cp /etc/sysconfig/init $hardenhomepath/sxibackupafter/
+cp /etc/sysconfig/network $hardenhomepath/sxibackupafter/
+cp /etc/default/grub $hardenhomepath/sxibackupafter/
+cp /etc/gshadow $hardenhomepath/sxibackupafter/
+cp /etc/shadow $hardenhomepath/sxibackupafter/
+cp /etc/cshrc $hardenhomepath/sxibackupafter/
+cp /etc/csh.cshrc $hardenhomepath/sxibackupafter/
+cp /root/.bashrc $hardenhomepath/sxibackupafter/
+cp /root/.bash_profile $hardenhomepath/sxibackupafter/
+cp /root/.cshrc $hardenhomepath/sxibackupafter/
+cp /root/.tcshrc $hardenhomepath/sxibackupafter/
+sleep 3
+cp /etc/modprobe.d/ipv6.conf $hardenhomepath/sxibackupafter/
+cp /etc/sysconfig/prelink $hardenhomepath/sxibackupafter/
+cp /etc/rsyslog.conf $hardenhomepath/sxibackupafter/
+cp /etc/audit/auditd.conf $hardenhomepath/sxibackupafter/
+cp /etc/audit/audit.rules $hardenhomepath/sxibackupafter/
+cp /etc/logrotate.d/syslog $hardenhomepath/sxibackupafter/
+cp /etc/crontab $hardenhomepath/sxibackupafter/
+cp /etc/at.deny $hardenhomepath/sxibackupafter/
+cp /etc/at.allow $hardenhomepath/sxibackupafter/
+cp /etc/cron.allow $hardenhomepath/sxibackupafter/
+cp /etc/cron.deny $hardenhomepath/sxibackupafter/
+cp /etc/ssh/sshd_config $hardenhomepath/sxibackupafter/
+cp /etc/vsftpd/ftpusers $hardenhomepath/sxibackupafter/
+cp /etc/profile $hardenhomepath/sxibackupafter/
+cp /etc/profile.d/os-security.sh $hardenhomepath/sxibackupafter/
+cp /etc/pam.d/system-auth $hardenhomepath/sxibackupafter/
+sleep 3
+cp /etc/pam.d/password-auth $hardenhomepath/sxibackupafter/
+cp /etc/security/pwquality.conf $hardenhomepath/sxibackupafter/
+cp /etc/securetty $hardenhomepath/sxibackupafter/
+cp /etc/login.defs $hardenhomepath/sxibackupafter/
+cp /etc/bashrc $hardenhomepath/sxibackupafter/
+cp /etc/pam.d/login $hardenhomepath/sxibackupafter/
+cp /etc/pam.d/gdm-password $hardenhomepath/sxibackupafter/
+cp /etc/motd $hardenhomepath/sxibackupafter/
+cp /etc/issue $hardenhomepath/sxibackupafter/
+cp /etc/issue.net $hardenhomepath/sxibackupafter/
+cp /etc/vsftpd/vsftpd.conf $hardenhomepath/sxibackupafter/
+cp /etc/grub.d/00_header $hardenhomepath/sxibackupafter/
+sleep 3
+systemctl list-unit-files >> $hardenhomepath/sxibackupafter/services.txt
+ls -al / | grep "root" >> $hardenhomepath/sxibackupafter/rootACL.txt
+ls -al /etc/rsyslog.conf >> $hardenhomepath/sxibackupafter/ACLs.txt
+ls -al boot/grub2/grub.cfg >> $hardenhomepath/sxibackupafter/ACLs.txt
+ls -al /etc/group >> $hardenhomepath/sxibackupafter/ACLs.txt
+ls -al /etc/passwd >> $hardenhomepath/sxibackupafter/ACLs.txt
+ls -al /etc/shadow >> $hardenhomepath/sxibackupafter/ACLs.txt
+ls -al /etc/crontab >> $hardenhomepath/sxibackupafter/CronACLs.txt
+ls -al /etc/cron.hourly >> $hardenhomepath/sxibackupafter/CronACLs.txt
+ls -al /etc/cron.daily >> $hardenhomepath/sxibackupafter/CronACLs.txt
+ls -al /etc/cron.weekly >> $hardenhomepath/sxibackupafter/CronACLs.txt
+ls -al /etc/cron.d >> $hardenhomepath/sxibackupafter/CronACLs.txt
+ls -al /etc/cron.monthly >> $hardenhomepath/sxibackupafter/CronACLs.txt

@@ -1,0 +1,217 @@
+---
+##########################################################
+### Section 3.5 File and Directories Access Management ###
+##########################################################
+
+- name: "3.5.1 | SSH Public and Private Key Permissions"
+  block:
+    - name: "3.5.1 | SSH Public and Private Key Permissions | Backup ssh host private key"
+      shell: find /etc/ssh -xdev -type f -name 'ssh_host_*_key' -exec stat {} \; >> /etc/ssh/privatekey-bkp
+      ignore_errors: true
+
+    - name: "3.5.1 | SSH Public and Private Key Permissions | Backup ssh host public key"
+      shell: find /etc/ssh -xdev -type f -name 'ssh_host_*_key.pub' -exec stat {} \; >> /etc/ssh/publickey-bkp
+      ignore_errors: true
+
+    - name: "3.5.1 | SSH Public and Private Key Permissions | Lookup ssh host private key"
+      find:
+        paths: /etc/ssh/
+        file_type: file
+        patterns: "ssh_host_*_key"
+      register: results_3_5_1a
+
+    - name: "3.5.1 | SSH Public and Private Key Permissions | Set ssh host private key ownership and permission"
+      file:
+        path: "{{ item.path }}"
+        state: file
+        owner: root
+        group: root
+        mode: 0600
+      with_items: "{{ results_3_5_1a.files }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: "3.5.1 | SSH Public and Private Key Permissions | Lookup ssh host public Key"
+      find:
+        paths: /etc/ssh/
+        file_type: file
+        patterns: "*.pub"
+      register: results_3_5_1b
+
+    - name: "3.5.1 | SSH Public and Private Key Permissions | Set ssh host public key ownership and permission"
+      file:
+        path: "{{ item.path }}"
+        state: file
+        owner: root
+        group: root
+        mode: 0644
+      with_items: "{{ results_3_5_1b.files }}"
+      loop_control:
+        label: "{{ item.path }}"
+  when:
+    - run_rule_3_5_1
+
+- name: "3.5.2 | Disable Weak Ciphers and Protocols (Web Server Hardening)"
+  debug:
+    msg: "This is a manual task. Please make sure all align with site policy!"
+  register: manual_3_5_2
+  when:
+    - run_rule_3_5_2
+
+- name: "3.5.3 | Default Service File Creation Mask"
+  shell: |
+    cd /etc/profile.d/sh-backup
+    find . -depth -name "*.sh" -exec sh -c 'f="{}"; mv -- "$f" "${f%}-bkp"' \;
+    perl -npe 's/umask\s+0\d2/umask 027/g' -i /etc/bashrc
+    perl -npe 's/umask\s+0\d2/umask 027/g' -i /etc/profile
+    find /etc/profile.d/*.sh | awk '{print "umask 027" >> $1}'
+  ignore_errors: true
+  when:
+    - run_rule_3_5_3
+
+- name: "3.5.4 | Sticky Bit on World Writable Directories"
+  shell: "{{ harden_home_path }}/scripts/3.5.4.sh"
+  args:
+    executable: /bin/bash
+  no_log: true
+  ignore_errors: true
+  when:
+    - run_rule_3_5_4
+
+- name: "3.5.5 | User Home Directories Permissions"
+  block:
+    - name: "3.5.5 | User Home Directories Permissions | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.5.5.sh -w"
+      args:
+        executable: /bin/bash
+      register: results_3_5_5a
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.5.5 | User Home Directories Permissions | Result no output"
+      debug:
+        msg: "PASS! No configuration needed"
+      when:
+        - results_3_5_5a is defined and results_3_5_5a.stdout == ""
+
+    - name: "3.5.5 | User Home Directories Permissions | Result any output"
+      debug:
+        msg: 
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_5_5a.stdout_lines }}"
+      register: manual_3_5_5a
+      when:
+        - results_3_5_5a is defined and results_3_5_5a.stdout != ""
+
+    - name: "3.5.5 | User Home Directories Permissions | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.5.5.sh -h"
+      args:
+        executable: /bin/bash
+      register: results_3_5_5b
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.5.5 | User Home Directories Permissions | Result no output"
+      debug:
+        msg: "PASS! No configuration needed"
+      when:
+        - results_3_5_5b is defined and results_3_5_5b.stdout == ""
+
+    - name: "3.5.5 | User Home Directories Permissions | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_5_5b.stdout_lines }}"
+      register: manual_3_5_5b
+      when:
+        - results_3_5_5b is defined and results_3_5_5b.stdout != ""
+
+    - name: "3.5.5 | User Home Directories Permissions | Configure /root"
+      file:
+        dest: /root
+        owner: root
+        group: root
+        mode: 700
+  when:
+    - run_rule_3_5_5
+
+- name: "3.5.6 | Ownerless Files and Directories"
+  block:
+    - name: "3.5.6 | Ownerless Files and Directories | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.5.6.sh"
+      args:
+        executable: /bin/bash
+      register: results_3_5_6
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.5.6 | Ownerless Files and Directories | Result no output"
+      debug:
+        msg: "PASS! No configuration needed"
+      when:
+        - results_3_5_6 is defined and results_3_5_6.stdout == ""
+
+    - name: "3.5.6 | Ownerless Files and Directories | Result any output"
+      debug:
+        msg: 
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_5_6.stdout_lines }}"
+      register: manual_3_5_6
+      when:
+        - results_3_5_6 is defined and results_3_5_6.stdout != ""
+  when:
+    - run_rule_3_5_6
+
+- name: "3.5.7 | SUID and SGID Executables"
+  block:
+    - name: "3.5.7 | SUID and SGID Executables | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.5.7.sh"
+      args:
+        executable: /bin/bash
+      register: results_3_5_7
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.5.7 | SUID and SGID Executables | Result no output"
+      debug:
+        msg: "PASS! No configuration needed"
+      when:
+        - results_3_5_7 is defined and results_3_5_7.stdout == ""
+
+    - name: "3.5.7 | SUID and SGID Executables | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_5_7.stdout_lines }}"
+      register: manual_3_5_7
+      when:
+        - results_3_5_7 is defined and results_3_5_7.stdout != ""
+  when:
+    - run_rule_3_5_7
+
+- name: "3.5.8 | World-Writable Files"
+  block:
+    - name: "3.5.8 | World-Writable Files | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.5.8.sh"
+      args:
+        executable: /bin/bash
+      register: results_3_5_8
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.5.8 | World-Writable Files | Result no output"
+      debug:
+        msg: "PASS! No configuration needed"
+      when:
+        - results_3_5_8 is defined and results_3_5_8.stdout == ""
+
+    - name: "3.5.8 | World-Writable Files | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_5_8.stdout_lines }}"
+      register: manual_3_5_8
+      when:
+        - results_3_5_8 is defined and results_3_5_8.stdout != ""
+  when:
+    - run_rule_3_5_8

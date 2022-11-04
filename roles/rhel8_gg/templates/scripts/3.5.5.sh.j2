@@ -1,0 +1,30 @@
+#!/bin/bash
+
+hardenhomepath='{{ harden_home_path }}'
+
+writable_func() {
+    for dir in $(cat /etc/passwd |
+        awk -F: '($7 == "/bin/bash") { print $6 }'); do find ${dir} -type d -prune \( -perm -g+w -o \
+            -perm -o+r -o -perm -o+w -o -perm -o+x \) -ls; done
+}
+
+homeowner_func() {
+    cat /etc/passwd | while read line; do
+        user=$(echo ${line} | awk -F: '{ print $1 }')
+        home=$(echo ${line} | awk -F: '{ print $6 }')
+        find ${home} -type d -prune -ls 2>/dev/null
+    done >$hardenhomepath/homeownership.log
+    cat $hardenhomepath/homeownership.log | sort | uniq
+}
+
+# Get the options
+while getopts ":wh" option; do
+    case $option in
+    w) # Writable option
+        writable_func
+        ;;
+    h) # Home Owner option
+        homeowner_func
+        ;;
+    esac
+done

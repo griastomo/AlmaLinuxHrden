@@ -1,0 +1,401 @@
+---
+####################################################################
+### Section 3.6 System Access, Authentication, and Authorization ###
+####################################################################
+
+- name: "3.6.1 | Restricting Sudo"
+  block:      
+    - name: "3.6.1 | Restricting Sudo | Edit /etc/sudoers file"
+      lineinfile:
+        path: /etc/sudoers
+        line: "{{ item }}"
+      with_items:
+        - 'Defaults    use_pty'	
+        - 'Defaults    logfile="/var/log/sudo.log"'
+
+    - name: "3.6.1 | Restricting Sudo | Find /etc/sudoers.d"
+      find:
+        paths: /etc/sudoers.d
+      register: results_3_6_1
+      changed_when: false
+
+    - name: "3.6.1 | Restricting Sudo | Edit /etc/sudoers.d file"
+      lineinfile:
+        path: "{{ item.path }}"
+        regexp: "^Defaults    use_pty"
+        line: "Defaults    use_pty"
+        state: present
+      with_items:
+        - "{{ results_3_6_1.files }}"
+
+    - name: "3.6.1 | Restricting Sudo | Edit /etc/sudoers.d file"
+      lineinfile:
+        path: "{{ item.path }}"
+        regexp: "^Defaults    logfile="
+        line: '"Defaults    logfile="/var/log/sudo.log"'
+        state: present
+      with_items:
+        - "{{ results_3_6_1.files }}"
+  when:
+    - run_rule_3_6_1
+
+- name: "3.6.2 | cron and at"
+  block:
+    - name: "3.6.2 | cron and at | Enabled crond service"
+      service:
+        name: crond
+        state: started
+        enabled: yes
+      when:
+        - "'crond' in ansible_facts.packages"
+      
+    - name: "3.6.2 | cron and at | Set /etc/crontab ownership and permission"
+      file:
+        path: /etc/crontab
+        owner: root
+        group: root
+        mode: og-rwx
+      
+    - name: "3.6.2 | cron and at | Set /etc/cron.hourly ownership and permission"
+      file:
+        path: /etc/cron.hourly
+        owner: root
+        group: root
+        mode: og-rwx
+      
+    - name: "3.6.2 | cron and at | Set /etc/cron.daily ownership and permission"
+      file:
+        path: /etc/cron.daily
+        owner: root
+        group: root
+        mode: og-rwx
+      
+    - name: "3.6.2 | cron and at | Set /etc/cron.weekly ownership and permission"
+      file:
+        path: /etc/cron.weekly
+        owner: root
+        group: root
+        mode: og-rwx
+      
+    - name: "3.6.2 | cron and at | Set /etc/cron.monthly ownership and permission"
+      file:
+        path: /etc/cron.monthly
+        owner: root
+        group: root
+        mode: og-rwx
+      
+    - name: "3.6.2 | cron and at | Set /etc/cron.d ownership and permission"
+      file:
+        path: /etc/cron.d
+        owner: root
+        group: root
+        mode: og-rwx
+
+    - name: "3.6.2 | cron and at | Set /etc/cron.allow ownership and permission"
+      file:
+        path: /etc/cron.allow
+        state: touch
+        owner: root
+        group: root
+        mode: og-rwx
+      
+    - name: "3.6.2 | cron and at | Limitation cron.deny"
+      shell: "awk -F: '{print $1}' /etc/passwd | grep -v root > /etc/cron.deny"
+      ignore_errors: true
+      
+    - name: "3.6.2 | cron and at | Limitation at.allow"       
+      file:
+        path: /etc/at.allow
+        state: touch
+        owner: root
+        group: root
+        mode: og-rwx
+      
+    - name: "3.6.2 | cron and at | Limitation at.deny"
+      shell: "awk -F: '{print $1}' /etc/passwd | grep -v root > /etc/at.deny"
+      ignore_errors: true
+  when:
+    - run_rule_3_6_2
+
+- name: "3.6.3 | SSH Configuration"
+  block:
+    - name: "3.6.3 | SSH Configuration | Edit /etc/ssh/sshd_config file"
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        state: present
+      with_items:
+        - { regexp: '^#X11Forwarding|^X11Forwarding', line: 'X11Forwarding no' }
+        - { regexp: '^(#)?MaxAuthTries \d', line: 'MaxAuthTries 5' }
+        - { regexp: '^#IgnoreRhosts|^IgnoreRhosts', line: 'IgnoreRhosts yes' }
+        - { regexp: '^#RhostsRSAAuthentication|^RhostsRSAAuthentication', line: 'RhostsRSAAuthentication no' }
+        - { regexp: '^#HostbasedAuthentication|^HostbasedAuthentication', line: 'HostbasedAuthentication no' }
+        - { regexp: '^#PermitRootLogin|^PermitRootLogin', line: 'PermitRootLogin no' }
+        - { regexp: '^#PermitEmptyPasswords|^PermitEmptyPasswords', line: 'PermitEmptyPasswords no' }
+        - { regexp: '^#PermitUserEnvironment|^PermitUserEnvironment', line: 'PermitUserEnvironment no' }
+        - { regexp: '^#StrictModes|^StrictModes', line: 'StrictModes yes' }
+        - { regexp: '^#Protocol|^Protocol', line: 'Protocol 2' }
+        - { regexp: '^#LogLevel|^LogLevel', line: 'LogLevel INFO' }
+        - { regexp: '^#Ciphers|^Ciphers', line: 'Ciphers aes128-ctr,aes192-ctr,aes256-ctr' }
+        - { regexp: '^#LoginGraceTime|^LoginGraceTime', line: 'LoginGraceTime 60' }
+        - { regexp: '^#Banner|^Banner', line: 'Banner /etc/issue.net' }
+        - { regexp: '^#MACs|^MACs', line: 'MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com' }
+        - { regexp: '^#ClientAliveInterval|^ClientAliveInterval', line: 'ClientAliveInterval 300' }
+        - { regexp: '^#ClientAliveCountMax|^ClientAliveCountMax', line: 'ClientAliveCountMax 0' }
+      loop_control:
+        label: "{{ item.line }}"
+      notify: handler_restart_sshd
+
+    - name: "3.6.3 | SSH Configuration | Permission for sshd_config"       
+      file:
+        path: /etc/ssh/sshd_config
+        owner: root
+        group: root
+        mode: og-rwx
+      notify: handler_restart_sshd
+      ignore_errors: true
+  when:
+    - run_rule_3_6_3
+
+- name: "3.6.4 | Host-Based Authentication Configuration"
+  block:
+    - name: "3.6.4 | Host-Based Authentication Configuration | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.6.4.sh -a"
+      args:
+        executable: /bin/bash
+      register: results_3_6_4a
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.6.4 | Host-Based Authentication Configuration | Result no output"
+      debug:
+        msg: "PASS! No Configuration Needed"
+      when:
+        - results_3_6_4a is defined and results_3_6_4a.stdout == ""
+
+    - name: "3.6.4 | Host-Based Authentication Configuration | Result any output"
+      block:
+        - name: "3.6.4 | Host-Based Authentication Configuration | Result any output"
+          debug:
+            msg: "{{ results_3_6_4a.stdout_lines }}"
+
+        - name: "3.6.4 | Host-Based Authentication Configuration | Remediate Any Output"
+          shell: "{{ harden_home_path }}/scripts/3.6.4.sh -b"
+          args:
+            executable: /bin/bash
+          no_log: true
+          ignore_errors: true
+      when:
+        - results_3_6_4a is defined and results_3_6_4a.stdout != ""
+
+    - name: "3.6.4 | Host-Based Authentication Configuration | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.6.4.sh -c"
+      args:
+        executable: /bin/bash
+      register: results_3_6_4b
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.6.4 | Host-Based Authentication Configuration | Result no output"
+      debug:
+        msg: "PASS! No Configuration Needed"
+      when:
+        - results_3_6_4b is defined and results_3_6_4b.stdout == ""
+
+    - name: "3.6.4 | Host-Based Authentication Configuration | Result any output"
+      block:
+        - name: "3.6.4 | Host-Based Authentication Configuration | Result any output"
+          debug:
+            msg: "{{ results_3_6_4b.stdout_lines }}"
+
+        - name: "3.6.4 | Host-Based Authentication Configuration | Remediate Any Output"
+          shell: "{{ harden_home_path }}/scripts/3.6.4.sh -d"
+          args:
+            executable: /bin/bash
+          no_log: true
+          ignore_errors: true
+      when:
+        - results_3_6_4b is defined and results_3_6_4b.stdout != ""
+  when:
+    - run_rule_3_6_4
+
+- name: "3.6.5 | Remove FTP"
+  block:
+    - name: "3.6.5 | Remove FTP | Remove FTP"
+      service:
+        name: tftp
+        enabled: no 
+      when:
+        - "'tftp' in ansible_facts.packages"
+      
+    - name: "3.6.5 | Remove FTP | Remove FTP server"
+      service:
+        name: vsftpd
+        enabled: no 
+      when:
+        - "'vsftpd' in ansible_facts.packages"
+  when:
+    - run_rule_3_6_5
+
+- name: "3.6.6 | Session Timeouts"
+  block:
+    - name: "3.6.6 | Session Timeouts | Edit /etc/profile file"
+      lineinfile:
+        path: /etc/profile
+        line: "{{ item }}"
+      with_items:     
+        - 'TMOUT=7200'
+        - 'readonly TMOUT'
+        - 'export TMOUT'
+      
+    - name: "3.6.6 | Session Timeouts | Edit /etc/bashrc file"
+      lineinfile:
+        path: /etc/bashrc
+        line: "{{ item }}"
+      with_items:     
+        - 'TMOUT=7200'
+        - 'readonly TMOUT'
+        - 'export TMOUT'
+  when:
+    - run_rule_3_6_6
+
+- name: "3.6.7 | PAM Configuration"
+  block:
+    - name: "3.6.7 | PAM Configuration | Edit /etc/libuser.conf & /etc/login.defs file"
+      replace:
+          path: "{{ item.path }}"
+          regexp: "{{ item.regexp }}"
+          replace: "{{ item.replace }}"
+      with_items:
+          - { path: /etc/libuser.conf, regexp: '^crypt_style\s*=\s*.*$', replace: 'crypt_style = sha512' }
+          - { path: /etc/login.defs, regexp: '^ENCRYPT_METHOD.*', replace: 'ENCRYPT_METHOD SHA512' }
+
+    - name: "3.6.7 | PAM Configuration | Edit /etc/pam.d/system-auth & /etc/pam.d/password-auth file"
+      lineinfile:
+          path: "{{ item }}"
+          state: present
+          regexp: '^password\s*requisite\s*pam_pwquality.so'
+          line: "password    requisite                                    pam_pwquality.so try_first_pass retry=3"
+          insertbefore: '^#?password ?'
+      with_items:
+          - /etc/pam.d/system-auth
+          - /etc/pam.d/password-auth
+
+    - name: "3.6.7 | PAM Configuration | Edit /etc/pam.d/system-auth & /etc/pam.d/password-auth file"
+      lineinfile:
+          path: "{{ item }}"
+          state: present
+          regexp: '^auth\s*required\s*pam_env.so'
+          line: "auth    required                                    pam_env.so"
+          insertafter: '^#?auth ?'
+      with_items:
+          - /etc/pam.d/system-auth
+          - /etc/pam.d/password-auth
+
+    - name: "3.6.7 | PAM Configuration | Edit /etc/pam.d/system-auth & /etc/pam.d/password-auth file"
+      lineinfile:
+          path: "{{ item }}"
+          state: present
+          regexp: '^auth\s*required\s*pam_faillock.so preauth'
+          line: "auth        required                                     pam_faillock.so preauth audit silent deny=5 unlock_time=900"
+          insertafter: '^#?auth ?'
+      with_items:
+          - /etc/pam.d/system-auth
+          - /etc/pam.d/password-auth
+
+    - name: "3.6.7 | PAM Configuration | Edit /etc/pam.d/system-auth & /etc/pam.d/password-auth file"
+      lineinfile:
+          path: "{{ item }}"
+          state: present
+          regexp: '^auth\s*[success=1 default=bad]\s*pam_unix.so'
+          line: "auth        [success=1 default=bad]                                     pam_unix.so"
+          insertafter: '^#?auth ?'
+      with_items:
+          - /etc/pam.d/system-auth
+          - /etc/pam.d/password-auth
+
+    - name: "3.6.7 | PAM Configuration | Edit /etc/pam.d/system-auth & /etc/pam.d/password-auth file"
+      lineinfile:
+          path: "{{ item }}"
+          state: present
+          regexp: '^auth\s*[default=die]\s*pam_faillock.so authfail'
+          line: "auth        [default=die]                                     pam_faillock.so authfail audit deny=5 unlock_time=900"
+          insertafter: '^#?auth ?'
+      with_items:
+          - /etc/pam.d/system-auth
+          - /etc/pam.d/password-auth
+
+    - name: "3.6.7 | PAM Configuration | Edit /etc/pam.d/system-auth & /etc/pam.d/password-auth file"
+      lineinfile:
+          path: "{{ item }}"
+          state: present
+          regexp: '^auth\s*sufficient\s*pam_faillock.so authsucc'
+          line: "auth        sufficient                                     pam_faillock.so authsucc audit deny=5 unlock_time=900"
+          insertafter: '^#?auth ?'
+      with_items:
+          - /etc/pam.d/system-auth
+          - /etc/pam.d/password-auth
+
+    - name: "3.6.7 | PAM Configuration | Edit /etc/pam.d/system-auth & /etc/pam.d/password-auth file"
+      lineinfile:
+          path: "{{ item }}"
+          state: present
+          regexp: '^auth\s*required\s*pam_deny.so'
+          line: "auth    required                                    pam_deny.so"
+          insertafter: '^#?auth ?'
+      with_items:
+          - /etc/pam.d/system-auth
+          - /etc/pam.d/password-auth
+
+    - name: "3.6.7 | PAM Configuration | Edit /etc/pam.d/system-auth & /etc/pam.d/password-auth file"
+      lineinfile:
+          path: "{{ item }}"
+          state: present
+          regexp: '^password\s*sufficient\s*pam_unix.so'
+          line: "password    sufficient                                    pam_unix.so remember=5 sha512"
+          insertbefore: '^#?password ?'
+      with_items:
+          - /etc/pam.d/system-auth
+          - /etc/pam.d/password-auth
+
+    - name: "3.6.7 | PAM Configuration | Edit /etc/security/pwquality.conf file"
+      lineinfile:
+        path: "/etc/security/pwquality.conf"
+        state: present
+        regexp: "^{{ item.key }}"
+        line: "{{ item.key }} = {{ item.value }}"
+      with_items:
+        - { key: "minlen", value: "8" }
+        - { key: "dcredit", value: "-1" }
+        - { key: "ucredit", value: "-1" }
+        - { key: "ocredit", value: "-1" }
+        - { key: "lcredit", value: "-1" }
+      loop_control:
+        label: "{{ item.key }}"
+  when:
+    - run_rule_3_6_7
+
+- name: "3.6.8 | Restricting root Login to System Console"
+  block:     
+    - name: "3.6.8 | Restricting root Login to System Console | Edit /etc/securetty file"
+      lineinfile:
+        path: /etc/securetty
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        create: yes
+        state: present
+      with_items:     
+        - { regexp: '^console', line: 'console' }
+        - { regexp: '^tty1', line: 'tty1' }
+      loop_control:
+        label: "{{ item.regexp }}"
+  when:
+    - run_rule_3_6_8
+
+- name: "3.6.9 | Firewall"
+  debug:
+    msg: "This is a manual task. Please make sure all align with site policy!"
+  register: manual_3_6_9
+  when:
+    - run_rule_3_6_9

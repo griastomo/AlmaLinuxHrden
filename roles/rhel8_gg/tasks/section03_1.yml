@@ -1,0 +1,20 @@
+---
+####################################
+### Section 3.1 Security Updates ###
+####################################
+
+- name: "3.1 | Security Updates"
+  block:
+    - name: "3.1 | Security Updates | Edit /etc/yum.conf file"
+      replace:
+        path: /etc/yum.conf
+        regexp: 'gpgcheck=\d*'
+        replace: "gpgcheck=1"
+
+    - name: "3.1 | Security Update | Install security updates"
+      yum:
+        security: yes
+        state: latest
+      ignore_errors: true
+  when:
+    - run_rule_3_1

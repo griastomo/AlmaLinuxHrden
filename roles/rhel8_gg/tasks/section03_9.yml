@@ -1,0 +1,44 @@
+---
+#################################
+### Section 3.9 Miscellaneous ###
+#################################
+
+- name: "3.9.1 | Randomized Virtual Memory Region Placement"
+  block:
+    - name: "3.9.1 | Randomized Virtual Memory Region Placement | Edit /etc/sysctl.conf file"
+      sysctl:
+        name: kernel.randomize_va_space
+        value: "2"
+        state: present
+        reload: yes
+        sysctl_set: yes
+        ignoreerrors: yes
+  when:
+    - run_rule_3_9_1
+
+- name: "3.9.2 | The .forward Files"
+  block:
+    - name: "3.9.2 | The .forward Files | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.9.2.sh"
+      args:
+        executable: /bin/bash
+      register: results_3_9_2
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.9.2 | The .forward Files | Result no output"
+      debug:
+        msg: "PASS! No configuration needed"
+      when:
+        - results_3_9_2 is defined and results_3_9_2.stdout == ""
+
+    - name: "3.9.2 | The .forward Files | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_9_2.stdout_lines }}"
+      register: manual_3_9_2
+      when:
+        - results_3_9_2 is defined and results_3_9_2.stdout != ""
+  when:
+    - run_rule_3_9_2

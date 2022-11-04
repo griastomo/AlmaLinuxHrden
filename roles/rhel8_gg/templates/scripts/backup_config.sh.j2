@@ -1,0 +1,93 @@
+#!/bin/bash
+
+# Section 2.3
+cp /etc/default/grub /etc/default/grub-bkp
+cp /etc/selinux/config /etc/selinux/config-bkp
+
+# Section 2.4
+cp /boot/grub2/grub.cfg /boot/grub2/grub.cfg-bkp
+
+# Section 2.5
+cp /etc/chrony.conf /etc/chrony.conf-bkp
+
+# Section 3.1
+cp /etc/yum.conf /etc/yum.conf-bkp
+
+# Section 3.2.4
+cp /etc/crypto-policies/config /etc/crypto-policies/config-bkp
+
+# Section 3.3.1 |  3.3.2 | 3.3.3 | 3.9.1 |
+cp /etc/sysctl.conf /etc/sysctl.conf-bkp
+
+# Section 3.3.1 
+cp /etc/security/limits.conf /etc/security/limits.conf-bkp
+
+# Section 3.3.2
+cp /etc/modprobe.d/blacklist-wireless /etc/modprobe.d/blacklist-wireless-bkp
+
+# Section 3.3.2 | <wi-fi interface> nya perlu value 
+cp /etc/sysconfig/network-scripts/ifcfg-<Wi-Fi interface> /etc/sysconfig/network-scripts/ifcfg-<Wi-Fi interface>-bkp
+
+# Section 3.3.3
+cp /etc/sysconfig/network /etc/sysconfig/network-bkp
+
+# Section 3.3.3 | 3.4.3
+cp /etc/default/grub /etc/default/grub-bkp
+
+# Section 3.4.2
+cp /etc/rsyslog.conf /etc/rsyslog.conf-bkp
+
+# Section 3.4.2
+cp /etc/systemd/journald.conf /etc/systemd/journald.conf-bkp
+
+# Section 3.4.3
+cp /etc/audit/auditd.conf /etc/audit/auditd.conf-bkp
+
+# Section 3.4.3
+cp /etc/audit/audit.rules /etc/audit/audit.rules-bkp
+
+# Section 3.4.3
+cp /etc/logrotate.d/syslog /etc/logrotate.d/syslog-bkp
+
+# Section 3.5.3 | 3.6.6 | 3.7.2
+cp /etc/bashrc /etc/bashrc-bkp
+cp /etc/profile /etc/profile-bkp
+mkdir /etc/profile.d/sh-backup
+cp /etc/profile.d/*.sh /etc/profile.d/sh-backup
+
+# Section 3.6.1
+cp /etc/sudoers /etc/sudoers-bkp
+cp -a /etc/sudoers.d /etc/sudoers.d-bkp
+
+# Section 3.6.2
+# cp /etc/cron.allow /etc/cron.allow.backup
+# cp /etc/cron.deny /etc/cron.deny.backup
+# cp /etc/at.deny /etc/at.deny.backup
+# cp /etc/at.allow /etc/at.allow.backup
+
+# Section 3.6.3 | 3.8.2
+/etc/ssh/sshd_config /etc/ssh/sshd_config-bkp
+
+# Section 3.6.7
+cp /etc/pam.d/system-auth /etc/pam.d/system-auth-bkp
+cp /etc/pam.d/password-auth /etc/pam.d/password-auth-bkp
+cp /etc/security/pwquality.conf /etc/security/pwquality.conf-bkp
+
+# Section 3.6.8
+cp /etc/securetty /etc/securetty-bkp
+
+# Section 3.7.1
+cp /etc/login.defs /etc/login.defs-bkp
+
+# Section 3.7.3
+cp /etc/pam.d/login /etc/pam.d/login-bkp
+
+# Section 3.7.3
+cp /etc/pam.d/gdm-password /etc/pam.d/gdm-password-bkp
+
+# Section 3.8.1 | 3.8.4
+cp /etc/motd /etc/motd-bkp
+
+# Section 3.8.1 | 3.8.4
+cp /etc/issue /etc/issue-bkp
+cp /etc/issue.net /etc/issue.net-bkp

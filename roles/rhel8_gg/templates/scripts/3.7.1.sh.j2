@@ -1,0 +1,8 @@
+#!/bin/bash
+
+hardenhomepath='{{ harden_home_path }}/ACLlistshadow-bkp.txt'
+
+ls -al /etc/shadow > $hardenhomepath
+ls -al /etc/gshadow >> $hardenhomepath
+ls -al /etc/shadow- >> $hardenhomepath
+ls -al /etc/gshadow- >> $hardenhomepath

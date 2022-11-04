@@ -1,0 +1,28 @@
+---
+###############################
+### Section 2.4 Secure Boot ###
+###############################
+
+- name: "2.4 | Secure Boot"
+  block:
+    - name: "2.4 | Secure Boot | Set /boot/grub2/grub.cfg ownership and permission"
+      file:
+        dest: /boot/grub2/grub.cfg
+        owner: root
+        group: root
+        mode: og-rwx
+
+    - name: "2.4 | Secure Boot | Set /boot/grub2/grubenv ownership and permission"
+      file:
+        dest: /boot/grub2/grubenv
+        owner: root
+        group: root
+        mode: og-rwx
+
+    - name: "2.4 | Secure Boot | Create an encrypting password for grub"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+      register: manual_2_4
+  when:
+    - run_rule_2_4

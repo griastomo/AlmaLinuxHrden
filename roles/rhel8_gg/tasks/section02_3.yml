@@ -1,0 +1,29 @@
+---
+###########################
+### Section 2.3 SELinux ###
+###########################
+
+- name: "2.3 | SELinux"
+  block:
+    - name: "2.3 | SELinux | Edit /etc/default/grub file"
+      replace:
+        path: /etc/default/grub
+        regexp: '(selinux|enforcing)\s*=\s*0\s*'
+        replace: ""
+      ignore_errors: true
+      notify: handler_grub2cfg
+
+    - name: "2.3 | SELinux | Edit /etc/selinux/config file"
+      selinux:
+        conf: /etc/selinux/config
+        policy: targeted
+        state: enforcing
+
+    - name: "2.3 | SELinux | Remove Setroubleshoot"
+      package:
+        name: setroubleshoot
+        state: absent
+      when:
+        - "'setroubleshoot' in ansible_facts.packages"
+  when:
+    - run_rule_2_3

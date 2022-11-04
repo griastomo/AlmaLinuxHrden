@@ -1,0 +1,53 @@
+---
+- name: handler_grub2cfg
+  shell: grub2-mkconfig -o /boot/grub2/grub.cfg
+  ignore_errors: true
+
+- name: handler_restart_chrony
+  become: true
+  service:
+    name: chronyd
+    state: restarted
+
+- name: handler_restart_sshd
+  become: true
+  service:
+    name: sshd
+    state: restarted
+
+- name: handler_restart_auditd
+  shell: /sbin/service auditd reload
+  changed_when: no
+  check_mode: no
+  failed_when: no
+  args:
+    warn: no
+
+- name: handler_sysctl_flush_ipv4_route_table
+  become: true
+  sysctl:
+    name: net.ipv4.route.flush
+    value: "1"
+    sysctl_set: yes
+    ignoreerrors: yes
+
+- name: handler_sysctl_flush_ipv6_route_table
+  become: true
+  sysctl:
+    name: net.ipv6.route.flush
+    value: "1"
+    sysctl_set: yes
+    ignoreerrors: yes
+
+- name: handler_restart_rsyslog
+  service:
+    name: rsyslog
+    state: restarted
+
+- name: handler_reload_dconf
+  shell: dconf update
+
+- name: handler_restart_sshd
+  service:
+    name: sshd
+    state: restarted

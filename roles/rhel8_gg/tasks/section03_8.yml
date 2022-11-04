@@ -1,0 +1,139 @@
+---
+###################################
+### Section 3.8 Warning Banners ###
+###################################
+
+- name: "3.8.1 | Standard Login Services Banner"
+  block:
+    - name: "3.8.1 | Standard Login Services Banner | Edit /etc/motd file"
+      template:
+        src: banner.j2
+        dest: /etc/motd
+
+    - name: "3.8.1 | Standard Login Services Banner | Edit /etc/issue and /etc/issue.net file"
+      template:
+        src: banner.j2
+        dest: "{{ item }}"
+      with_items:
+        - /etc/issue
+        - /etc/issue.net
+
+    - name: "3.8.1 | Standard Login Services Banner | Set /etc/motd, /etc/issue, and /etc/issue.net ownership and permission"
+      file:
+        dest: "{{ item }}"
+        owner: root
+        group: root
+        mode: 0644
+      with_items:
+        - /etc/motd
+        - /etc/issue
+        - /etc/issue.net
+  when:
+    - run_rule_3_8_1
+
+- name: "3.8.2 | SSH Warning Banner"
+  block:
+    - name: "3.8.2 | SSH Warning Banner | Edit /etc/ssh/sshd_config file"
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^Banner"
+        line: "Banner /etc/issue.net"
+        state: present
+      notify: handler_restart_sshd
+  when:
+    - run_rule_3_8_2
+
+- name: "3.8.3 | GNOME Login Banner"
+  lineinfile:
+      path: "{{ item.file }}"
+      regexp: "{{ item.regexp }}"
+      line: "{{ item.line }}"
+      create: yes
+      owner: root
+      group: root
+      mode: 0644
+  notify: handler_reload_dconf
+  with_items:
+      - { file: '/etc/dconf/profile/gdm', regexp: 'user-db', line: 'user-db:user' }
+      - { file: '/etc/dconf/profile/gdm', regexp: 'system-db', line: 'system-db:gdm' }
+      - { file: '/etc/dconf/profile/gdm', regexp: 'file-db', line: 'file-db:/usr/share/gdm/greeter-dconf-defaults' }
+      - { file: '/etc/dconf/db/gdm.d/01-banner-message', regexp: '\[org\/gnome\/login-screen\]', line: '[org/gnome/login-screen]' }
+      - { file: '/etc/dconf/db/gdm.d/01-banner-message', regexp: 'banner-message-enable', line: 'banner-message-enable=true' }
+      - { file: '/etc/dconf/db/gdm.d/01-banner-message', regexp: 'banner-message-text', line: "banner-message-text='{{ vars_warning_banner }}' " }
+  loop_control:
+    label: "{{ item.file }}"
+  when:
+    - run_rule_3_8_3
+
+- name: "3.8.4 | OS Information"
+  block:
+    - name: "3.8.4 | OS Information | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.8.4.sh /etc/motd"
+      args:
+        executable: /bin/bash
+      register: results_3_8_4a
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.8.4 | OS Information | /etc/motd | Result no output"
+      debug:
+        msg: "PASS! No configuration needed"
+      when:
+        - results_3_8_4a is defined and results_3_8_4a.stdout == ""
+
+    - name: "3.8.4 | OS Information | /etc/motd | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_8_4a.stdout_lines }}"
+      register: manual_3_8_4a
+      when:
+        - results_3_8_4a is defined and results_3_8_4a.stdout != ""
+
+    - name: "3.8.4 | OS Information | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.8.4.sh /etc/issue"
+      args:
+        executable: /bin/bash
+      register: results_3_8_4b
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.8.4 | OS Information | /etc/issue | Result no output"
+      debug:
+        msg: "PASS! No configuration needed"
+      when:
+        - results_3_8_4b is defined and results_3_8_4b.stdout == ""
+
+    - name: "3.8.4 | OS Information | /etc/issue | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_8_4b.stdout_lines }}"
+      register: manual_3_8_4b
+      when:
+        - results_3_8_4b is defined and results_3_8_4b.stdout != ""
+
+    - name: "3.8.4 | OS Information | Audit"
+      shell: "{{ harden_home_path }}/scripts/3.8.4.sh /etc/issue.net"
+      args:
+        executable: /bin/bash
+      register: results_3_8_4c
+      no_log: true
+      ignore_errors: true
+
+    - name: "3.8.4 | OS Information | /etc/issue.net | Result no output"
+      debug:
+        msg: "PASS! No configuration needed"
+      when:
+        - results_3_8_4c is defined and results_3_8_4c.stdout == ""
+
+    - name: "3.8.4 | OS Information | /etc/issue.net | Result any output"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+          - "{{ results_3_8_4c.stdout_lines }}"
+      register: manual_3_8_4c
+      when:
+        - results_3_8_4c is defined and results_3_8_4c.stdout != ""
+  when:
+    - run_rule_3_8_4

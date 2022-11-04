@@ -1,0 +1,11 @@
+---
+############################################
+### Section 2.1 Filesystem Configuration ###
+############################################
+
+- name: "2.1 | Filesystem Configuration"
+  debug:
+    msg: "This is a manual task. Please make sure all align with site policy!"
+  register: manual_2_1
+  when:
+    - run_rule_2_1

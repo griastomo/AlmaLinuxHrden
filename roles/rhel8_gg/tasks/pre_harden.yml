@@ -1,0 +1,50 @@
+---
+- name: "PRE-HARDEN | Creates directory for harden review"
+  file:
+    path: "{{ harden_home_path }}"
+    state: directory
+    mode: 0755
+
+- name: "PRE-HARDEN | Copying the Scripts"
+  block:
+    - name: "PRE-HARDEN | Copying the Scripts"
+      file:
+        path: "{{ harden_home_path }}/scripts"
+        state: directory
+        mode: 0750
+
+    - name: "PRE-HARDEN | Copying the Scripts"
+      template:
+        src: "{{ item }}"
+        dest: "{{ harden_home_path }}/scripts/{{ item | basename | regex_replace('.j2','') }}"
+        owner: root
+        group: root
+        mode: 0750
+      changed_when: false
+      with_fileglob:
+        - templates/scripts/*.j2
+      loop_control:
+        label: "Copied"
+
+- name: "PRE-HARDEN | Export Configuration Before Harden"
+  shell: "{{ harden_home_path }}/scripts/before_harden.sh"
+  args:
+    executable: /bin/bash
+  no_log: true
+  ignore_errors: true
+
+- name: "PRE-HARDEN | Backup Configuration"
+  shell: "{{ harden_home_path }}/scripts/backup_config.sh"
+  args:
+    executable: /bin/bash
+  no_log: true
+  ignore_errors: true
+
+- name: "PRE-HARDEN | Gather the package facts"
+  package_facts:
+    manager: auto
+
+- name: "PRE-HARDEN | Gather all groups"
+  getent:
+    database: group
+    split: ':'

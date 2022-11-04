@@ -1,0 +1,278 @@
+---
+#####################################
+### Section 3.4 Tamper Protection ###
+#####################################
+
+- name: "3.4.1 | AIDE"
+  block:
+    - name: "3.4.1 | AIDE | Install AIDE"
+      package:
+        name: aide
+        state: present
+      ignore_errors: true
+
+    - name: "3.4.1 | AIDE | Init Aide"
+      shell: aide --init --verbose
+      ignore_errors: true
+
+    - name: "3.4.1 | AIDE | Move AIDE database file"
+      shell: mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+      ignore_errors: true
+
+    - name: "3.4.1 | AIDE | Remove prelink"
+      package:
+        name: prelink
+        state: absent
+      when:
+        - "'prelink' in ansible_facts.packages"
+
+    - name: "3.4.1 | AIDE | Check AIDE"
+      shell: aide --check
+      ignore_errors: true
+
+    - name: "3.4.1 | AIDE | Update AIDE"
+      shell: aide --update
+      ignore_errors: true
+
+    - name: "3.4.1 | AIDE | Delete old DB"
+      file:
+        path: var/lib/aide/aide.db.gz
+        state: absent
+
+    - name: "3.4.1 | AIDE | Move new DB"
+      shell: mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+      ignore_errors: true
+
+    - name: "3.4.1 | AIDE | Set cron to run AIDE integrity check"
+      cron:
+        name: "Run AIDE integrity check"
+        user: root
+        minute: "0"
+        hour: "5"
+        job: "/usr/sbin/aide --check"
+  when:
+    - run_rule_3_4_1
+
+- name: "3.4.2 | Configure rsyslog"
+  block:
+    - name: "3.4.2 | Configure rsyslog | Install Rsyslog"
+      package:
+        name: rsyslog
+        state: present
+      ignore_errors: true
+
+    - name: "3.4.2 | Configure rsyslog | Disable syslog"
+      service:
+        name: syslog
+        enabled: no
+      when:
+        - "'syslog' in ansible_facts.packages"
+
+    - name: "3.4.2 | Configure rsyslog | Enable Rsyslog"
+      service:
+        name: rsyslog
+        enabled: yes
+      when:
+        - "'rsyslog' in ansible_facts.packages"
+
+    - name: "3.4.2 | Configure rsyslog | Allow traffic Rsyslog"
+      shell: "semanage port -a -t syslogd_port_t -p tcp {{ vars_syslog_port }}"
+      ignore_errors: true
+
+    - name: "3.4.2 | Configure rsyslog | Edit /etc/rsyslog.conf file"
+      lineinfile:
+        path: /etc/rsyslog.conf
+        line: "{{ item }}"
+      notify: handler_restart_rsyslog
+      with_items:
+        - '*.emerg :omusrmsg:*'
+        - 'auth,authpriv.* /var/log/secure'
+        - 'auth,user.* /var/log/secure'
+        - 'mail.* -/var/log/maillog'
+        - 'mail.info -/var/log/mail.info'
+        - 'mail.warning -/var/log/mail.warn'
+        - 'mail.err /var/log/mail.err'
+        - 'news.crit -/var/log/news/news.crit'
+        - 'news.err -/var/log/news/news.err'
+        - 'news.notice -/var/log/news/news.notice'
+        - '*.=warning;*.=err -/var/log/warn'
+        - '*.crit /var/log/warn'
+        - '*.*;mail.none;news.none -/var/log/messages'
+        - 'kern.* /var/log/messages'
+        - 'daemon.* /var/lib/rsyslog/daemon.log'
+        - 'syslog.* /var/log/syslog'
+        - 'local0,local1.* -/var/log/localmessages'
+        - 'local2,local3.* -/var/log/localmessages'
+        - 'local4,local5.* -/var/log/localmessages'
+        - 'local6,local7.* -/var/log/localmessages'
+        - '$template TmplAuth, "/var/log/%HOSTNAME%/%$year%%$month%%$day%/%PROGRAMNAME%.log"'
+        - '*.* ?TmplAuth'
+
+    - name: "3.4.2 | Configure rsyslog | Set all log file ownership and permission"
+      file:
+        path: /var/lib/rsyslog/daemon.log
+        state: touch
+        owner: root
+        group: root
+        mode: og-rwx
+
+    - name: "3.4.2 | Configure rsyslog | Edit /etc/systemd/journald.conf file"
+      replace:
+        path: /etc/systemd/journald.conf
+        regexp: "{{ item.regexp }}"
+        replace: "{{ item.line }}"
+      with_items:
+        - { regexp: '#ForwardToSyslog=yes', line: 'ForwardToSyslog=yes' }
+        - { regexp: '#Compress=yes', line: 'Compress=yes' }
+        - { regexp: '#Storage=+\w+', line: 'Storage=persistent' }
+      loop_control:
+        label: "{{ item.line }}"
+  when:
+    - run_rule_3_4_2
+
+- name: "3.4.3 | Configure System Accounting"
+  block:    
+    - name: "3.4.3 | Configure System Accounting | Edit /etc/audit/auditd.conf file"
+      replace:
+        path: /etc/audit/auditd.conf
+        regexp: "{{ item.regexp }}"
+        replace: "{{ item.line }}"
+      with_items:
+        - { regexp: '\W*max_log_file\s*=\s*\d*', line: 'max_log_file = 128' }
+        - { regexp: '\W*admin_space_left_action\s*=\s*\w*', line: 'admin_space_left_action = halt' }
+        - { regexp: '\W*max_log_file_action\s*=\s*\w*', line: 'max_log_file_action = keep_logs' }
+      loop_control:
+        label: "{{ item.line }}"
+      
+    - name: "3.4.3 | Configure System Accounting | Enabled auditd"
+      service:
+        name: auditd
+        enabled: yes 
+      when:
+        - "'auditd' in ansible_facts.packages"
+
+    - name: "3.4.3 | Configure System Accounting | Edit /etc/default/grub file"
+      block:
+        - name: "3.4.3 | Configure System Accounting | Edit /etc/default/grub file"
+          shell: grep 'GRUB_CMDLINE_LINUX=' /etc/default/grub | sed 's/.$//'
+          changed_when: false
+          failed_when: false
+          check_mode: no
+          register: results_3_4_3a
+
+        - name: "3.4.3 | Configure System Accounting | Edit /etc/default/grub file | Replace existing setting"
+          replace:
+            path: /etc/default/grub
+            regexp: "audit=."
+            replace: "audit=1"
+          notify: handler_grub2cfg
+          when: "'audit=' in results_3_4_3a.stdout"
+
+        - name: "3.4.3 | Configure System Accounting | Edit /etc/default/grub file | Add audit setting if missing"
+          lineinfile:
+            path: /etc/default/grub
+            regexp: "^GRUB_CMDLINE_LINUX="
+            line: '{{ results_3_4_3a.stdout }} audit=1"'
+          notify: handler_grub2cfg
+          when: "'audit=' not in results_3_4_3a.stdout"
+
+        - name: "3.4.3 | Configure System Accounting | Edit /etc/default/grub file"
+          shell: grep 'GRUB_CMDLINE_LINUX=' /etc/default/grub | sed 's/.$//'
+          changed_when: false
+          failed_when: false
+          check_mode: no
+          register: results_3_4_3b
+
+        - name: "3.4.3 | Configure System Accounting | Edit /etc/default/grub file | Replace existing setting"
+          replace:
+            path: /etc/default/grub
+            regexp: 'audit_backlog_limit=\d+'
+            replace: "audit_backlog_limit=8192"
+          notify: handler_grub2cfg
+          when: "'audit_backlog_limit=' in results_3_4_3b.stdout"
+
+        - name: "3.4.3 | Configure System Accounting | Edit /etc/default/grub file | Add audit_backlog_limit setting if missing"
+          lineinfile:
+            path: /etc/default/grub
+            regexp: "^GRUB_CMDLINE_LINUX="
+            line: '{{ results_3_4_3b.stdout }} audit_backlog_limit=8192"'
+          notify: handler_grub2cfg
+          when: "'audit_backlog_limit=' not in results_3_4_3b.stdout"
+
+    - name: "3.4.3 | Configure System Accounting | Edit /etc/audit/audit.rules file"   
+      lineinfile:
+        path: /etc/audit/audit.rules
+        line: "{{ item }}"
+      with_items:
+        - '-a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time-change'
+        - '-a always,exit -F arch=b32 -S adjtimex -S settimeofday -S stime -k time-change'
+        - '-a always,exit -F arch=b64 -S clock_settime -k time-change'
+        - '-a always,exit -F arch=b32 -S clock_settime -k time-change'
+        - '-w /etc/localtime -p wa -k time-change'
+        - '-w /etc/group -p wa -k identity'
+        - '-w /etc/passwd -p wa -k identity'
+        - '-w /etc/gshadow -p wa -k identity'
+        - '-w /etc/shadow -p wa -k identity'
+        - '-w /etc/security/opasswd -p wa -k identity'
+        - '-a always,exit -F arch=b64 -S sethostname -S setdomainname -k system-locale'
+        - '-a always,exit -F arch=b32 -S sethostname -S setdomainname -k system-locale'
+        - '-w /etc/issue -p wa -k system-locale'
+        - '-w /etc/issue.net -p wa -k system-locale'
+        - '-w /etc/hosts -p wa -k system-locale'
+        - '-w /etc/sysconfig/network -p wa -k system-locale'
+        - '-w /etc/sysconfig/network-scripts/ -p wa -k system-locale'
+        - '-w /etc/selinux/ -p wa -k MAC-policy'
+        - '-w /etc/share/selinux/ -p wa -k MAC-policy'
+        - '-w /var/run/faillog -p wa -k logins'
+        - '-w /var/run/faillog -p wa -k logins'
+        - '-w /var/log/lastlog -p wa -k logins'
+        - '-w /var/run/utmp -p wa -k session'
+        - '-w /var/log/wtmp -p wa -k session'
+        - '-w /var/log/btmp -p wa -k session'
+        - '-a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -F auid>=1000 -F auid!=4294967295 -k perm_mod'
+        - '-a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -F auid>=1000 -F auid!=4294967295 -k perm_mod'
+        - '-a always,exit -F arch=b64 -S chown -S fchown -S fchownat -S lchown -F auid>=1000 -F auid!=4294967295 -k perm_mod'
+        - '-a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown -F auid>=1000 -F auid!=4294967295 -k perm_mod'
+        - '-a always,exit -F arch=b64 -S setxattr -S lsetxattr -S fsetxattr \'
+        - '-S removexattr -S lremovexattr -S fremovexattr -F auid>=1000 \'
+        - '-F auid!=4294967295 -k perm_mod'
+        - '-a always,exit -F arch=b32 -S setxattr -S lsetxattr -S fsetxattr \'
+        - '-S removexattr -S lremovexattr -S fremovexattr -F auid>=1000 \'
+        - '-F auid!=4294967295 -k perm_mod'
+        - '-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=1000 -F auid!=4294967295 -k access'
+        - '-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=1000 -F auid!=4294967295 -k access'
+        - '-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=1000 -F auid!=4294967295 -k access'
+        - '-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=1000 -F auid!=4294967295 -k access'
+        - '-a always,exit -F arch=b64 -S mount -F auid>=1000 -F auid!=4294967295 -k mounts'
+        - '-a always,exit -F arch=b32 -S mount -F auid>=1000 -F auid!=4294967295 -k mounts'
+        - '-a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete'
+        - '-a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete'
+        - '-w /etc/sudoers -p wa -k scope'
+        - '-w /etc/sudoers.d/ -p wa -k scope'
+        - '-w /var/log/sudo.log -p wa -k actions'
+        - '-w /sbin/insmod -p x -k modules'
+        - '-w /sbin/rmmod -p x -k modules'
+        - '-w /sbin/modprobe -p x -k modules'
+        - '-a always,exit -F arch=b64 -S init_module -S delete_module -k modules'
+        - '-e 2' 
+   
+    - name: "3.4.3 | Configure System Accounting | Edit /etc/logrotate.d/syslog file"
+      lineinfile:
+        path: /etc/logrotate.d/syslog
+        line: "{{ item }}"
+      with_items:
+        - '/var/log/messages' 
+        - '/var/log/secure' 
+        - '/var/log/maillog' 
+        - '/var/log/spooler' 
+        - '/var/log/boot.log' 
+        - '/var/log/cron'
+        - '{'
+        - '  sharedscripts'
+        - '  size 100M'
+        - '  postrotate'
+        - '        /bin/kill -HUP `cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true'
+        - '  endscripts'
+        - '}'
+  when:
+    - run_rule_3_4_3

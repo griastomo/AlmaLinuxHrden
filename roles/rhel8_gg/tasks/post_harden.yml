@@ -1,0 +1,53 @@
+---
+- name: "POST-HARDEN | Manual Remediation"
+  block:
+    - name: "POST-HARDEN | Manual Remediation"
+      file:
+        path: "{{ harden_home_path }}/manual_remediation/"
+        state: directory
+        mode: 0760
+
+    - name: "POST-HARDEN | Manual Remediation"
+      lineinfile:
+        path: "{{ harden_home_path }}/manual_remediation/{{ item.section }}"
+        create: yes
+        state: present
+        line: "{{ item.manual_msg }}"
+      when:
+        - item.manual_msg is defined and item.manual_msg != ""
+      loop:
+        - { section: "section2.1", manual_msg: "{{ manual_2_1.msg | default() }}" }
+        - { section: "section2.2", manual_msg: "{{ manual_2_2.msg | default() }}" }
+        - { section: "section2.4", manual_msg: "{{ manual_2_4.msg | default() }}" }
+        - { section: "section2.5", manual_msg: "{{ manual_2_5.msg | default() }}" }
+        - { section: "section2.6", manual_msg: "{{ manual_2_6.msg | default() }}" }
+        - { section: "section3.3.2", manual_msg: "{{ manual_3_3_2.msg | default() }}" }
+        - { section: "section3.4.1", manual_msg: "{{ manual_3_4_1.msg | default() }}" }
+        - { section: "section3.5.2", manual_msg: "{{ manual_3_5_2.msg | default() }}" }
+        - { section: "section3.5.5a", manual_msg: "{{ manual_3_5_5a.msg | default() }}" }
+        - { section: "section3.5.5b", manual_msg: "{{ manual_3_5_5b.msg | default() }}" }
+        - { section: "section3.5.6", manual_msg: "{{ manual_3_5_6.msg | default() }}" }
+        - { section: "section3.5.7", manual_msg: "{{ manual_3_5_7.msg | default() }}" }
+        - { section: "section3.5.8", manual_msg: "{{ manual_3_5_8.msg | default() }}" }
+        - { section: "section3.6.7", manual_msg: "{{ manual_3_6_7.msg | default() }}" }
+        - { section: "section3.6.9", manual_msg: "{{ manual_3_6_9.msg | default() }}" }
+        - { section: "section3.7.1", manual_msg: "{{ manual_3_7_1.msg | default() }}" }
+        - { section: "section3.7.3", manual_msg: "{{ manual_3_7_3.msg | default() }}" }
+        - { section: "section3.7.4", manual_msg: "{{ manual_3_7_4.msg | default() }}" }
+        - { section: "section3.7.6a", manual_msg: "{{ manual_3_7_6a.msg | default() }}" }
+        - { section: "section3.7.6b", manual_msg: "{{ manual_3_7_6b.msg | default() }}" }
+        - { section: "section3.7.7", manual_msg: "{{ manual_3_7_7.msg | default() }}" }
+        - { section: "section3.7.8a", manual_msg: "{{ manual_3_7_8a.msg | default() }}" }
+        - { section: "section3.7.8b", manual_msg: "{{ manual_3_7_8b.msg | default() }}" }
+        - { section: "section3.7.9a", manual_msg: "{{ manual_3_7_9a.msg | default() }}" }
+        - { section: "section3.7.9b", manual_msg: "{{ manual_3_7_9b.msg | default() }}" }
+        - { section: "section3.7.10", manual_msg: "{{ manual_3_7_10.msg | default() }}" }
+        - { section: "section3.7.11a", manual_msg: "{{ manual_3_7_11a.msg | default() }}" }
+        - { section: "section3.7.11b", manual_msg: "{{ manual_3_7_11b.msg | default() }}" }
+        - { section: "section3.8.3", manual_msg: "{{ manual_3_8_3.msg | default() }}" }
+        - { section: "section3.8.4a", manual_msg: "{{ manual_3_8_4a.msg | default() }}" }
+        - { section: "section3.8.4b", manual_msg: "{{ manual_3_8_4b.msg | default() }}" }
+        - { section: "section3.8.4c", manual_msg: "{{ manual_3_8_4c.msg | default() }}" }
+        - { section: "section3.9.2", manual_msg: "{{ manual_3_9_2.msg | default() }}" }
+      loop_control:
+        label: "{{ item.section }}"

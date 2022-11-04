@@ -1,0 +1,33 @@
+---
+#########################################
+### Section 2.5 Date and Time Setting ###
+#########################################
+
+- name: "2.5 | Date and Time Setting"
+  block:
+    - name: "2.5 | Date and Time Setting | Edit /etc/chrony.conf file"
+      template:
+        src: chrony.conf.j2
+        dest: /etc/chrony.conf
+        owner: root
+        group: root
+        mode: 0644
+      notify: handler_restart_chrony
+      when:
+        - auto_conf_date_time
+
+    - name: "2.5 | Date and Time Setting | Verify the date and time"
+      shell: timedatectl
+      register: results_2_5
+
+    - name: "2.5 | Date and Time Setting | Verify the date and time"
+      debug:
+        msg: "{{ results_2_5.stdout_lines }}"
+
+    - name: "2.5 | Date and Time Setting | Verify the date and time"
+      debug:
+        msg:
+          - "This is a manual task. Please make sure all align with site policy!"
+      register: manual_2_5
+  when:
+    - run_rule_2_5

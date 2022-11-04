@@ -1,0 +1,51 @@
+---
+- import_tasks: pre_harden.yml
+  become: true
+
+- import_tasks: section02_1.yml
+  become: true
+
+- import_tasks: section02_2.yml
+  become: true
+
+- import_tasks: section02_3.yml
+  become: true
+
+- import_tasks: section02_4.yml
+  become: true
+
+- import_tasks: section02_5.yml
+  become: true
+
+- import_tasks: section02_6.yml
+  become: true
+
+- import_tasks: section03_1.yml
+  become: true
+
+- import_tasks: section03_2.yml
+  become: true
+
+- import_tasks: section03_3.yml
+  become: true
+
+- import_tasks: section03_4.yml
+  become: true
+
+- import_tasks: section03_5.yml
+  become: true
+
+- import_tasks: section03_6.yml
+  become: true
+
+- import_tasks: section03_7.yml
+  become: true
+
+- import_tasks: section03_8.yml
+  become: true
+
+- import_tasks: section03_9.yml
+  become: true
+
+- import_tasks: post_harden.yml
+  become: true

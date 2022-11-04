@@ -1,0 +1,121 @@
+---
+#################################
+### Section 3.3 Kernel Tuning ###
+#################################
+
+- name: "3.3.1 | General Kernel Parameters"
+  block:
+    - name: "3.3.1 | General Kernel Parameters | Edit /etc/sysctl.conf file"
+      sysctl:
+        name: fs.suid_dumpable
+        value: "0"
+        state: present
+        reload: true
+        sysctl_set: true
+        ignoreerrors: yes
+
+    - name: "3.3.1 | General Kernel Parameters | Edit /etc/security/limits.conf file"
+      pam_limits:
+        domain: "*"
+        limit_type: hard
+        limit_item: core
+        value: "0"
+      ignore_errors: true
+  when:
+    - run_rule_3_3_1
+
+- name: "3.3.2 | Networking Kernel Parameters"
+  block:
+    - name: "3.3.2 | Networking Kernel Parameters | Wi-Fi Interface"
+      debug:
+        msg: "This is a manual task. Please make sure all align with site policy!"
+      register: manual_3_3_2
+
+    - name: "3.3.2 | Networking Kernel Parameters | Edit /etc/sysctl.conf file"
+      sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        sysctl_set: yes
+        state: present
+        reload: yes
+        ignoreerrors: yes
+      notify: handler_sysctl_flush_ipv4_route_table
+      with_items:
+        - { name: net.ipv4.ip_forward, value: 0 }
+        - { name: net.ipv4.conf.all.send_redirects, value: 0 }
+        - { name: net.ipv4.conf.default.send_redirects, value: 0 }
+        - { name: net.ipv4.tcp_max_syn_backlog, value: 1280 }
+        - { name: net.ipv4.icmp_echo_ignore_broadcasts, value: 1 }
+        - { name: net.ipv4.conf.all.accept_source_route, value: 0 }
+        - { name: net.ipv4.conf.all.accept_redirects, value: 0 }
+        - { name: net.ipv4.conf.all.secure_redirects, value: 0 }
+        - { name: net.ipv4.conf.all.log_martians, value: 1 }
+        - { name: net.ipv4.conf.default.accept_source_route, value: 0 }
+        - { name: net.ipv4.conf.default.accept_redirects, value: 0 }
+        - { name: net.ipv4.conf.default.secure_redirects, value: 0 }
+        - { name: net.ipv4.conf.default.log_martians, value: 1 }
+        - { name: net.ipv4.icmp_ignore_bogus_error_responses, value: 1 }
+        - { name: net.ipv4.tcp_syncookies, value: 1 }
+        - { name: net.ipv4.conf.all.rp_filter, value: 1 }
+        - { name: net.ipv4.conf.default.rp_filter, value: 1 }
+        - { name: net.ipv4.tcp_timestamps, value: 0 }
+      loop_control:
+        label: "{{ item.name }}"
+  when:
+    - run_rule_3_3_2
+
+- name: "3.3.3 | IPv6"
+  block:
+    - name: "3.3.3 | IPv6 | Edit /etc/sysctl.conf file"
+      sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        sysctl_set: yes
+        state: absent
+        reload: yes
+        ignoreerrors: yes
+      notify: handler_sysctl_flush_ipv6_route_table
+      with_items:
+        - { name: net.ipv6.conf.all.accept_ra, value: 0 }
+        - { name: net.ipv6.conf.default.accept_ra, value: 0 }
+        - { name: net.ipv6.conf.all.accept_redirects, value: 0 }
+        - { name: net.ipv6.conf.default.accept_redirects, value: 0 }
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: "3.3.3 | IPv6 | Edit /etc/sysconfig/network file"
+      lineinfile:
+        path: /etc/sysconfig/network
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        state: present
+      with_items:
+        - { regexp: '^#IPV6INIT|^IPV6INIT', line: 'IPV6INIT=no' }
+        - { regexp: '^#NETWORKING_IPV6|^NETWORKING_IPV6', line: 'NETWORKING_IPV6=no' }
+
+    - name: "3.3.3 | IPv6 | Edit /etc/default/grub file"
+      block:
+        - name: "3.3.3 | IPv6 | Edit /etc/default/grub file"
+          shell: grep 'GRUB_CMDLINE_LINUX=' /etc/default/grub | sed 's/.$//'
+          changed_when: false
+          failed_when: false
+          check_mode: no
+          register: results_3_3_3
+
+        - name: "3.3.3 | IPv6 | Edit /etc/default/grub file | Replace existing setting"
+          replace:
+            path: /etc/default/grub
+            regexp: "ipv6.disable=."
+            replace: "ipv6.disable=1"
+          notify: handler_grub2cfg
+          when: "'ipv6.disable=' in results_3_3_3.stdout"
+
+        - name: "3.3.3 | IPv6 | Edit /etc/default/grub file | Add ipv6.disable setting if missing"
+          lineinfile:
+            path: /etc/default/grub
+            regexp: "^GRUB_CMDLINE_LINUX="
+            line: '{{ results_3_3_3.stdout }} ipv6.disable=1"'
+          notify: handler_grub2cfg
+          when: "'ipv6.disable=' not in results_3_3_3.stdout"
+  when:
+    - run_rule_3_3_3

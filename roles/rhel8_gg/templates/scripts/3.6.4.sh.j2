@@ -1,0 +1,59 @@
+#!/bin/bash
+
+audit_rhosts_func() {
+    for dir in `cat /etc/passwd | egrep -v '(root|halt|sync|shutdown)' | awk -F: '($7 != "/sbin/nologin") { print $6 }'`; do
+        for file in $dir/.rhosts; do
+            if [ ! -h "$file" -a -f "$file" ]; then
+                echo ".rhosts file found in $dir"
+            fi
+        done
+    done
+}
+
+remediation_rhosts_func() {
+    for dir in `cat /etc/passwd | egrep -v '(root|halt|sync|shutdown)' | awk -F: '($7 != "/sbin/nologin") { print $6 }'`; do
+        for file in $dir/.rhosts; do
+            if [ ! -h "$file" -a -f "$file" ]; then
+                rm -r "$file"
+            fi
+        done
+    done
+}
+
+audit_netrc_func() {
+    for dir in `cat /etc/passwd | egrep -v '(root|halt|sync|shutdown)' | awk -F: '($7 != "/sbin/nologin") { print $6 }'`; do
+        for file in $dir/.netrc; do
+            if [ ! -h "$file" -a -f "$file" ]; then
+                echo ".netrc file found in $dir"
+            fi
+        done
+    done
+}
+
+remediation_netrc_func() {
+    for dir in `cat /etc/passwd | egrep -v '(root|halt|sync|shutdown)' | awk -F: '($7 != "/sbin/nologin") { print $6 }'`; do
+        for file in $dir/.netrc; do
+            if [ ! -h "$file" -a -f "$file" ]; then
+                rm -r "$file"
+            fi
+        done
+    done
+}
+
+# Get the options
+while getopts ":abcd" option; do
+    case $option in
+    a) # Audit Rhosts option
+        audit_rhosts_func
+        ;;
+    b) # Remediate Rhosts option
+        remediation_rhosts_func
+        ;;
+    c) # Audit Netrc option
+        audit_netrc_func
+        ;;
+    d) # Remediate Netrc option
+        remediation_netrc_func
+        ;;
+    esac
+done

@@ -1,0 +1,3 @@
+#!/bin/bash
+
+grep -v -e '^\+' -v -e 'root|halt|shutdown|sync' /etc/passwd | awk -F: '($7 != "/sbin/nologin" && $3<500) { print }'

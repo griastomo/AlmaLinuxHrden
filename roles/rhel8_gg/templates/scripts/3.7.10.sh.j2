@@ -1,0 +1,8 @@
+#!/bin/bash
+
+f_login="/etc/login.defs"
+f_passwd="/etc/passwd"
+minUID=$(grep "^UID_MIN" $f_login)
+maxUID=$(grep "^UID_MAX" $f_login)
+echo "---------------[ System User Accounts ]---------------"
+awk -F':' -v "min=${minUID##UID_MIN}" -v "max=${maxUID##UID_MAX}" '{ if (!($3 >= min && $3 <= max && $7 != "/sbin/nologin")) print $0 }' "$f_passwd"

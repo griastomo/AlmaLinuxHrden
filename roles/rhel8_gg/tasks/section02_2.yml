@@ -1,0 +1,22 @@
+---
+###################################
+### Section 2.2 Hardening Tools ###
+###################################
+
+- name: "2.2 | Hardening Tools"
+  block:
+    - name: "2.2 | Hardening Tools | Check repository"
+      debug:
+        msg: "This is a manual task. Please make sure all align with site policy!"
+      register: manual_2_2
+
+    - name: "2.2 | Hardening Tools | Install tools"
+      package:
+        name:
+          - "logrotate"
+          - "aide"
+          - "rsyslog"
+        state: present
+      ignore_errors: true
+  when:
+    - run_rule_2_2
